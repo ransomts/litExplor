@@ -1,0 +1,63 @@
+---
+title: "Interfacing with ERIC"
+author: "Tim Ransom"
+date: "10/22/2021"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Inputs and Outputs
+
+Just a button that executes a hard coded ERIC search query, which is then displayed below
+
+```{r eruptions, echo=FALSE}
+inputPanel(
+  
+  selectInput("n_breaks", label = "Number of bins:",
+              choices = c(10, 20, 35, 50), selected = 20),
+  
+  sliderInput("bw_adjust", label = "Bandwidth adjustment:",
+              min = 0.2, max = 2, value = 1, step = 0.2)
+)
+
+renderPlot({
+  hist(faithful$eruptions, probability = TRUE, breaks = as.numeric(input$n_breaks),
+       xlab = "Duration (minutes)", main = "Geyser eruption duration")
+  
+  dens <- density(faithful$eruptions, adjust = input$bw_adjust)
+  lines(dens, col = "blue")
+})
+```
+
+
+## R scratch space
+
+Generated curl command from the eric api interactive builder:
+curl -X GET "https://api.ies.ed.gov/eric/?search=subject%3A%22community%20college%22%20peerreviewed%3AT&format=json&rows=20000" -H  "accept: */*"
+
+```{r}
+library(curl)
+test_url <- "https://api.ies.ed.gov/eric/?search=subject%3A%22community%20college%22%20peerreviewed%3AT&format=json&rows=20000"
+req <- curl_fetch_memory(test_url)
+
+library(rjson)
+json_req <- fromJSON(rawToChar(req$content))
+
+library(urltools)
+url_decode(test_url)
+
+eric_base_url <- "https://api.ies.ed.gov/eric/?search="
+search_terms <- list(list("community college", "college"), list("online learning", "distance education"))
+peer_reviewed <- TRUE
+format <- "json"
+rows <- 2000
+
+for (term_group in search_terms) {
+  paste(unlist(term_group), collapse = " OR ") # still need to add escape quotes
+}
+```
+
