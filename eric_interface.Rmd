@@ -10,16 +10,86 @@ runtime: shiny
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+## Search terms
+
+We're representing our search terms as a list of lists, where the top level elements
+are AND'd and the lower level elements are OR'd. For example: ((a, b, c), (d, e))
+represents "a OR b OR c" AND "d OR e"
+
+Here's the full list of terms we're going to make our queries out of:
+```{r}
+search_terms <- list(list("community college", "higher education", "postsecondary education"),
+                     list("pandemic", "COVID-19"),
+                     list("online courses", "online learning",
+                        "educational technology", "distance education", "electronic learning"),
+                     list("hands on", "lab"),
+                     list("FAA", "part 147"))
+```
+
+
+### Powerset construction
+
+We need to try all the combinations of our search terms, which mathematically
+is the cartesian product of the powersets of our full list above.
+```{r}
+library(rje)
+library(set6)
+foo <- powerSet(search_terms)
+mapply(powerset, search_terms)
+#cartesian product the sets together
+
+```
+
+
+## Eric communications
+
+We use a couple functions to talk to the ERIC api, one to format the query for
+the database request and one to talk to ERIC.
+
+```{r}
+get_eric_json <- function(encoded_url) {
+  # test_url <- "https://api.ies.ed.gov/eric/?search=subject%3A%22community%20college%22%20peerreviewed%3AT&format=json&rows=20000"
+  library(curl)
+  library(rjson)
+
+  # variable left out for future caching opportunity
+  req <- curl_fetch_memory(test_url)
+  return(fromJSON(rawToChar(req$content)))
+
+}
+
+
+
+create_eric_url <- function(search_terms) {
+  library(urltools)
+  eric_base_url <- "https://api.ies.ed.gov/eric/?"
+  peer_reviewed <- T # this needs to be either "T" or "F"
+  format <- "json"
+  rows <- 2000
+
+  terms_temp_a <- mapply(function(x) {paste("\"", x, "\"", sep = "")}, search_terms)
+  formatted_terms <- paste(mapply(function(x) {paste(unlist(x), collapse = " OR ")}, terms_temp_a), collapse = " AND ")
+
+  unencoded_url <- paste(eric_base_url,
+        "search=subject:", formatted_terms, "&",
+        "peerreviewed=", peer_reviewed, "&",
+        "format=", format, "&",
+        "rows=", rows, "&",
+        sep = "")
+
+  return(url_encode(unencoded_url))
+}
+```
+
+
 ## Inputs and Outputs
 
 Just a button that executes a hard coded ERIC search query, which is then displayed below
 
 ```{r eruptions, echo=FALSE}
 inputPanel(
-  
   selectInput("n_breaks", label = "Number of bins:",
               choices = c(10, 20, 35, 50), selected = 20),
-  
   sliderInput("bw_adjust", label = "Bandwidth adjustment:",
               min = 0.2, max = 2, value = 1, step = 0.2)
 )
@@ -27,37 +97,17 @@ inputPanel(
 renderPlot({
   hist(faithful$eruptions, probability = TRUE, breaks = as.numeric(input$n_breaks),
        xlab = "Duration (minutes)", main = "Geyser eruption duration")
-  
+
   dens <- density(faithful$eruptions, adjust = input$bw_adjust)
   lines(dens, col = "blue")
 })
 ```
 
 
-## R scratch space
+## scratch space
 
 Generated curl command from the eric api interactive builder:
 curl -X GET "https://api.ies.ed.gov/eric/?search=subject%3A%22community%20college%22%20peerreviewed%3AT&format=json&rows=20000" -H  "accept: */*"
 
-```{r}
-library(curl)
-test_url <- "https://api.ies.ed.gov/eric/?search=subject%3A%22community%20college%22%20peerreviewed%3AT&format=json&rows=20000"
-req <- curl_fetch_memory(test_url)
 
-library(rjson)
-json_req <- fromJSON(rawToChar(req$content))
-
-library(urltools)
-url_decode(test_url)
-
-eric_base_url <- "https://api.ies.ed.gov/eric/?search="
-search_terms <- list(list("community college", "college"), list("online learning", "distance education"))
-peer_reviewed <- TRUE
-format <- "json"
-rows <- 2000
-
-for (term_group in search_terms) {
-  paste(unlist(term_group), collapse = " OR ") # still need to add escape quotes
-}
-```
 
