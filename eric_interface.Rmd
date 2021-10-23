@@ -34,8 +34,8 @@ is the cartesian product of the powersets of our full list above.
 ```{r}
 library(rje)
 library(set6)
-foo <- powerSet(search_terms)
-mapply(powerset, search_terms)
+powerset <- powerSet(search_terms)
+mapply(powerSet, search_terms)
 #cartesian product the sets together
 
 ```
@@ -53,34 +53,35 @@ get_eric_json <- function(encoded_url) {
   library(rjson)
 
   # variable left out for future caching opportunity
-  req <- curl_fetch_memory(test_url)
+  req <- curl_fetch_memory(encoded_url)
   return(fromJSON(rawToChar(req$content)))
 
 }
 
 
-
 create_eric_url <- function(search_terms) {
   library(urltools)
-  eric_base_url <- "https://api.ies.ed.gov/eric/?"
-  peer_reviewed <- T # this needs to be either "T" or "F"
+
+  eric_base_url <- "https://api.ies.ed.gov/eric/"
   format <- "json"
   rows <- 2000
-
-  terms_temp_a <- mapply(function(x) {paste("\"", x, "\"", sep = "")}, search_terms)
-  formatted_terms <- paste(mapply(function(x) {paste(unlist(x), collapse = " OR ")}, terms_temp_a), collapse = " AND ")
-
-  unencoded_url <- paste(eric_base_url,
-        "search=subject:", formatted_terms, "&",
-        "peerreviewed=", peer_reviewed, "&",
-        "format=", format, "&",
-        "rows=", rows, "&",
-        sep = "")
-
-  return(url_encode(unencoded_url))
+  start <- 0
+  fields <- list(c("peerreviewed", "'T'"))
+  # All possible fields can be found here: https://eric.ed.gov/?api#/default/get_eric_
+  
+  formatted_terms <- paste(mapply(function(x) {paste(unlist(x), collapse = " OR ")}, search_terms), collapse = " AND ")
+  
+  unencoded_url <- paste(eric_base_url, 
+                           "?search=", formatted_terms, 
+                           "&format=", format, 
+                           "&start=", start,
+                           "&rows=", rows, 
+                           "&fields=", paste(paste(unlist(fields), collapse=":"), collapse = " "), 
+                           sep="")
+  
+  return(URLencode(unencoded_url)) # url_encode encodes too much and breaks the api but this function works
 }
 ```
-
 
 ## Inputs and Outputs
 
