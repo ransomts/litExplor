@@ -71,12 +71,14 @@ create_eric_url <- function(search_terms) {
   
   formatted_terms <- paste(mapply(function(x) {paste(unlist(x), collapse = " OR ")}, search_terms), collapse = " AND ")
   
+  formatted_fields <- paste(mapply(function(x) {paste(unlist(x), collapse = ":")}, fields), collapse = " ")
+  
   unencoded_url <- paste(eric_base_url, 
                            "?search=", formatted_terms, 
                            "&format=", format, 
                            "&start=", start,
                            "&rows=", rows, 
-                           "&fields=", paste(paste(unlist(fields), collapse=":"), collapse = " "), 
+                           "&fields=", formatted_fields, 
                            sep="")
   
   return(URLencode(unencoded_url)) # url_encode encodes too much and breaks the api but this function works
