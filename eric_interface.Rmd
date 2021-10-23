@@ -31,13 +31,21 @@ search_terms <- list(list("community college", "higher education", "postsecondar
 
 We need to try all the combinations of our search terms, which mathematically
 is the cartesian product of the powersets of our full list above.
-```{r}
-library(rje)
-library(set6)
-powerset <- powerSet(search_terms)
-mapply(powerSet, search_terms)
-#cartesian product the sets together
 
+A table showing the cartesian product of the search "(a OR b) AND (1 OR 2)"
+|    | a   | b   | ab   |     "" |
+|  1 | a1  | b1  | ab1  |      1 |
+|  2 | a2  | b2  | ab2  |      2 |
+| 12 | a12 | b12 | ab12 |     12 |
+| "" | a   | b   | ab   | REMOVE |
+
+```{r}
+term_powerset <- function(search_terms) {
+  powerset <- powerSet(search_terms)
+  mapply(powerSet, search_terms)
+  # Cartesian product the sets together
+
+}
 ```
 
 
@@ -48,29 +56,30 @@ the database request and one to talk to ERIC.
 
 ```{r}
 get_eric_json <- function(encoded_url) {
-  # test_url <- "https://api.ies.ed.gov/eric/?search=subject%3A%22community%20college%22%20peerreviewed%3AT&format=json&rows=20000"
   library(curl)
   library(rjson)
 
   # variable left out for future caching opportunity
   req <- curl_fetch_memory(encoded_url)
   return(fromJSON(rawToChar(req$content)))
-
 }
 
 
-create_eric_url <- function(search_terms) {
-  library(urltools)
+# All possible fields can be found here: https://eric.ed.gov/?api#/default/get_eric_
+# possible interesting additions: language, publicationtype, publicationdateyear
+# magic numbers:
+#   rows - max ERIC lets one pull to API be
+#   start - adjust to daisy-chain queries together when there are more than 2000 (unimplemented)
+create_eric_url <- function(search_terms, start = 0, rows = 2000,
+                            fields = list(list("*"), list("peerreviewed", "'T'"))) {
 
+  # unlikely to change, we only care about ERIC at the moment
   eric_base_url <- "https://api.ies.ed.gov/eric/"
+  # we've selected json over xml for parsing and efficiency purposes
   format <- "json"
-  rows <- 2000
-  start <- 0
-  fields <- list(c("peerreviewed", "'T'"))
-  # All possible fields can be found here: https://eric.ed.gov/?api#/default/get_eric_
   
+  # two one liners to form our search term logical expression and the field modification encoding
   formatted_terms <- paste(mapply(function(x) {paste(unlist(x), collapse = " OR ")}, search_terms), collapse = " AND ")
-  
   formatted_fields <- paste(mapply(function(x) {paste(unlist(x), collapse = ":")}, fields), collapse = " ")
   
   unencoded_url <- paste(eric_base_url, 
@@ -79,9 +88,9 @@ create_eric_url <- function(search_terms) {
                            "&start=", start,
                            "&rows=", rows, 
                            "&fields=", formatted_fields, 
-                           sep="")
+                           sep = "")
   
-  return(URLencode(unencoded_url)) # url_encode encodes too much and breaks the api but this function works
+  return(URLencode(unencoded_url)) # urltools::url_encode broke api compatibility, using utils::URLencode instead
 }
 ```
 
@@ -105,12 +114,3 @@ renderPlot({
   lines(dens, col = "blue")
 })
 ```
-
-
-## scratch space
-
-Generated curl command from the eric api interactive builder:
-curl -X GET "https://api.ies.ed.gov/eric/?search=subject%3A%22community%20college%22%20peerreviewed%3AT&format=json&rows=20000" -H  "accept: */*"
-
-
-
