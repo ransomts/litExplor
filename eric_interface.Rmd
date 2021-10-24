@@ -9,34 +9,6 @@ runtime: shiny
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-## Inputs and Outputs
-
-Just a button that executes a hard coded ERIC search query, which is then displayed below
-
-```{r eruptions, echo=FALSE}
-inputPanel(
-  textAreaInput("terms_input", "Search", rows = 3,
-                value = "FAA, Part 147;\ndistance learning, online education"),
-  actionButton("display_button", "Display terms")
-)
-verbatimTextOutput("terms_output")
-
-format_term_input <- eventReactive(input$display_button, {
-  return(paste(
-    "terms:\n",
-    input$terms_input,
-    "First newline found at: ",
-    str_locate(input$terms_input, "\n"),
-    "\n"
-  ))
-})
-
-library(stringr)
-
-output$terms_output <- renderText({
-  format_term_input()
-})
-```
 
 ## Search terms
 
@@ -64,11 +36,13 @@ We need to try all the combinations of our search terms, which mathematically
 is the cartesian product of the powersets of our full list above.
 
 A table showing the cartesian product of the search "(a OR b) AND (1 OR 2)"
+```{text}
 |    | a   | b   | ab   |     "" |
 |  1 | a1  | b1  | ab1  |      1 |
 |  2 | a2  | b2  | ab2  |      2 |
 | 12 | a12 | b12 | ab12 |     12 |
 | "" | a   | b   | ab   | REMOVE |
+```
 
 ```{r}
 term_powerset <- function(search_terms) {
