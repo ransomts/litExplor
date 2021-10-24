@@ -44,28 +44,34 @@ A table showing the cartesian product of the search "(a OR b) AND (1 OR 2)"
 
 ```{r}
 term_powerset <- function(search_terms) {
-  powerset <- powerSet(search_terms)
-  mapply(powerSet, search_terms)
+  mapply(rje::powerSet, search_terms)
   # Cartesian product the sets together
 }
 
-cartesian_product <- function(powerset) {
-  # TODO: This currently only works with two powersets
-  
+recursive_cartesian_product <- function(powersets, index = 1) {
+  # This check is for when we want to stop recursion
+  # It also acts as a way to calculate a two dimensional product without recursion
+  if (index+1 ==  length(powersets)) {
+    out <- pracma::strcat(powersets[[index]], powersets[[index+1]], collapse = " ")
+  }
+  else {
+    # When we need to calculate a three or more dimension cartesian product we first calculate the product of the first two powersets.
+    # Then we calculate another two dimensional product using the next powerset as the first operand and the result of the previous calculation as the second
+    out <- pracma::strcat(powersets[[index]], recursive_cartesian_product(powersets, index+1), collapse = " ")
+  }
+  # Trim the empty results
+  return(out[out != " "])
+}
+
+cartesian_product <- function(powersets) {
   # We turn the powersets into a one dimensional list so we can format each set with a space in between
-  compacted_list <- mapply(paste, powerset, MoreArgs = list(collapse = " "))
+  compacted_list <- mapply(paste, powersets, MoreArgs = list(collapse = " "))
   
   # We then need to split the list by empty strings so that we can use each powerset individually
   formatted_powersets <- split(compacted_list, cumsum(data.frame(compacted_list)[,1] == ""))
   
-  # We can then use the pracma::strcat function which will combine each of the elements in the list together
-  # Later on we should probably replace this with our own implementation.
-  out <- pracma::strcat(formatted_powersets[[1]], formatted_powersets[[2]], collapse = " ")
-  
-  # After that we just need to trim off the empty option at the end
-  out <- out[out != " "]
-  
-  return(out)
+  # We then use our recursive cartesian product function to calculate the product using our formatted powersets
+  return(recursive_cartesian_product(formatted_powersets))
 }
 ```
 
