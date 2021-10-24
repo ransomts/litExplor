@@ -44,7 +44,25 @@ term_powerset <- function(search_terms) {
   powerset <- powerSet(search_terms)
   mapply(powerSet, search_terms)
   # Cartesian product the sets together
+}
 
+cartesian_product <- function(powerset) {
+  # TODO: This currently only works with two powersets
+  
+  # We turn the powersets into a one dimensional list so we can format each set with a space in between
+  compacted_list <- mapply(paste, powerset, MoreArgs = list(collapse = " "))
+  
+  # We then need to split the list by empty strings so that we can use each powerset individually
+  formatted_powersets <- split(compacted_list, cumsum(data.frame(compacted_list)[,1] == ""))
+  
+  # We can then use the pracma::strcat function which will combine each of the elements in the list together
+  # Later on we should probably replace this with our own implementation.
+  out <- pracma::strcat(formatted_powersets[[1]], formatted_powersets[[2]], collapse = " ")
+  
+  # After that we just need to trim off the empty option at the end
+  out <- out[out != " "]
+  
+  return(out)
 }
 ```
 
