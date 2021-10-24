@@ -9,6 +9,31 @@ runtime: shiny
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+## Inputs and Outputs
+
+Just a button that executes a hard coded ERIC search query, which is then displayed below
+
+```{r eruptions, echo=FALSE}
+
+
+
+textAreaInput("terms_input", "Search", rows = 3,
+              value = "FAA, Part 147;\ndistance learning, online education")
+actionButton("display_button", "Display terms")
+verbatimTextOutput("terms_output")
+
+format_term_input <- eventReactive(input$display_button, {
+  return(paste("terms:\n", input$terms_input,
+        "First newline found at: ", str_locate(input$terms_input, "\n"), "\n"))
+})
+
+library(stringr)
+
+output$terms_output <- renderText({
+  format_term_input()
+})
+
+```
 
 ## Search terms
 
@@ -138,27 +163,4 @@ create_eric_url <- function(search_terms, start = 0, rows = 2000,
   
   return(URLencode(unencoded_url)) # urltools::url_encode broke api compatibility, using utils::URLencode instead
 }
-```
-
-
-
-## Inputs and Outputs
-
-Just a button that executes a hard coded ERIC search query, which is then displayed below
-
-```{r eruptions, echo=FALSE}
-inputPanel(
-  selectInput("n_breaks", label = "Number of bins:",
-              choices = c(10, 20, 35, 50), selected = 20),
-  sliderInput("bw_adjust", label = "Bandwidth adjustment:",
-              min = 0.2, max = 2, value = 1, step = 0.2)
-)
-
-renderPlot({
-  hist(faithful$eruptions, probability = TRUE, breaks = as.numeric(input$n_breaks),
-       xlab = "Duration (minutes)", main = "Geyser eruption duration")
-
-  dens <- density(faithful$eruptions, adjust = input$bw_adjust)
-  lines(dens, col = "blue")
-})
 ```
