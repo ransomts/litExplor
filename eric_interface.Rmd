@@ -24,10 +24,13 @@ search_terms <- list(list("community college", "higher education", "postsecondar
                         "educational technology", "distance education", "electronic learning"),
                      list("hands on", "lab"),
                      list("FAA", "part 147"))
+
+test_searh_terms <- list(list("community college", "higher education"),
+                         list("online learning", "distance education"))
 ```
 
 
-### Powerset construction
+## Powerset construction
 
 We need to try all the combinations of our search terms, which mathematically
 is the cartesian product of the powersets of our full list above.
@@ -67,8 +70,33 @@ cartesian_product <- function(powerset) {
 ```
 
 
-## Eric communications
+## ERIC communications
 
+### Talking to ERIC
+
+Here's the putting-it-all-together for this file. I've just put in some untested
+skeleton code here of how I see it fitting together. This is the last backend task before
+we jump into the GUI reactive stuff.
+
+```{r}
+all_eric_term_queries <- "" # TODO: use smaller test terms, term_powerset(test_search_terms)
+all_eric_urls <- "" # TODO: map the list of searchs through create_eric_url
+all_eric_json_results <- list() # TODO: this is likely better represented with an R dataframe, if so, should we convert after all api queries or during loop?
+
+# TODO: is this better iteratively or can we do some parallel network hits? I don't see ERIC docs talking about that
+for (eric_url in all_eric_urls) {
+  # TODO: write some of these to files that we can use for testing
+  eric_json <- get_eric_json(eric_url)
+
+  all_eric_json_results.append(eric_json)
+}
+
+# print out the human readable version of the search query and the number of results for it
+# just a two column list to STDOUT is good for now, just want to see it somewhere other than the R env
+```
+
+
+### Utility functions
 We use a couple functions to talk to the ERIC api, one to format the query for
 the database request and one to talk to ERIC.
 
@@ -111,6 +139,8 @@ create_eric_url <- function(search_terms, start = 0, rows = 2000,
   return(URLencode(unencoded_url)) # urltools::url_encode broke api compatibility, using utils::URLencode instead
 }
 ```
+
+
 
 ## Inputs and Outputs
 
