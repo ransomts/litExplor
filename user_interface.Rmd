@@ -22,10 +22,16 @@ inputPanel(
 verbatimTextOutput("terms_output", placeholder = TRUE)
 
 format_term_input <- eventReactive(input$display_button, {
+  # TODO: Remove leading spaces from split inputs (More info below)
+  
+  # We split the string on new lines then pass the array of split strings to mapply which splits each line on commas
+  split_input <- mapply(strsplit, strsplit(input$terms_input, '\n'), MoreArgs = list(split = ','))
+  
+  # We then combine the split strings with ORs on the same line and each line separated with ANDs
+  # When we combine with ORs it produces a double space. This is because we're splitting on comma without the following space.
+  # This could be changed if we want to disallow commas without spaces after or we could trim the spaces after.
   paste(
-    "terms:\n", input$terms_input,
-    "First newline found at: ", str_locate(input$terms_input, "\n"),
-    "\n"
+    "terms: ", paste(mapply(paste, split_input, MoreArgs = list(collapse = " OR ")), collapse = " AND ")
   )
 })
 
