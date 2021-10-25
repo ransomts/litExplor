@@ -23,6 +23,21 @@ Just a button that executes a hard coded ERIC search query, which is then displa
 
 ```{r eruptions, echo=FALSE}
 library(stringr)
+
+format_terms_input2 <- eventReactive(input$display_button, {
+  # TODO: Remove leading spaces from split inputs (More info below)
+
+  # We split the string on new lines then pass the array of split strings to mapply which splits each line on commas
+  split_input <- mapply(strsplit, strsplit(input$terms_input, '\n'), MoreArgs = list(split = ','))
+
+  # We then combine the split strings with ORs on the same line and each line separated with ANDs
+  # When we combine with ORs it produces a double space. This is because we're splitting on comma without the following space.
+  # This could be changed if we want to disallow commas without spaces after or we could trim the spaces after.
+  paste(
+    "terms: ", paste(mapply(paste, split_input, MoreArgs = list(collapse = " OR ")), collapse = " AND ")
+  )
+})
+
 # search_terms is the string input from the terms_input textArea
 format_terms_input <- function(search_terms) {
   term_groups <- t(str_split(search_terms, '\n', simplify = TRUE))
@@ -62,4 +77,4 @@ Ideas for helpful graphs:
 * venn diagram
 * flame chart
 * something interactive? checkbox matrix?
-* tree breakdown
+* tree breakdowns, roots are total sums of term groups
