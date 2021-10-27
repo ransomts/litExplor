@@ -68,9 +68,17 @@ display_button_event <- eventReactive(input$display_button, {
   #   "\n"
   # )
 
+  # Currently cartesian returns a list of strings. 
+  # That means that instead of searching for "FOO AND BAR" we're searching for "FOO  BAR"
+  # It should be fine for now as this simply serves to prove that we can search the database with our user input. 
+  # Also it will be fixed once we create our own cartesian product function.
   cartesian_product_of_terms <- cartesian_product(term_powerset(format_terms_input_to_list(input$terms_input)))
   
-  return(paste(cartesian_product_of_terms, collapse = '\n'))
+  eric_urls <- mapply(function(x) {create_eric_url(x, rows = 20, fields = list(list("peerreviewed", "'T'")))}, cartesian_product_of_terms)
+  
+  eric_responses <- mapply(get_eric_json, eric_urls)
+  
+  return(paste(cartesian_product_of_terms, eric_responses, sep = "\n", collapse = '\n\n'))
 })
 
 library(stringr)
