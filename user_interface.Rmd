@@ -24,7 +24,7 @@ Just a button that executes a hard coded ERIC search query, which is then displa
 ```{r eruptions, echo=FALSE}
 library(stringr)
 
-format_terms_input2 <- eventReactive(input$display_button, {
+format_terms_input2 <- function(search_terms) {
   # TODO: Remove leading spaces from split inputs (More info below)
 
   # We split the string on new lines then pass the array of split strings to mapply which splits each line on commas
@@ -36,13 +36,13 @@ format_terms_input2 <- eventReactive(input$display_button, {
   paste(
     "terms: ", paste(mapply(paste, split_input, MoreArgs = list(collapse = " OR ")), collapse = " AND ")
   )
-})
+}
 
 # search_terms is the string input from the terms_input textArea
 format_terms_input <- function(search_terms) {
   term_groups <- t(str_split(search_terms, '\n', simplify = TRUE))
   terms_list <- mapply(function(x) {str_split(x, ',', simplify = TRUE)}, term_groups)
-
+  
   return(terms_list)
 }
 
@@ -53,6 +53,9 @@ inputPanel(
 )
 verbatimTextOutput("terms_output", placeholder = TRUE)
 
+# Import eric interface
+source(knitr::purl("eric_interface.Rmd", output = tempfile(), quiet=TRUE))
+
 display_button_event <- eventReactive(input$display_button, {
   # working simple text display
   # paste(
@@ -60,7 +63,10 @@ display_button_event <- eventReactive(input$display_button, {
   #   "First newline found at: ", str_locate(input$terms_input, "\n"),
   #   "\n"
   # )
-  return(format_terms_input(input$terms_input))
+  
+  cartesian_product_of_terms <- cartesian_product(term_powerset(format_terms_input(input$terms_input)))
+  
+  return(paste(cartesian_product_of_terms, collapse = '\n'))
 })
 
 library(stringr)

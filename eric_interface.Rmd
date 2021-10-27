@@ -5,10 +5,11 @@ date: "10/22/2021"
 output: html_document
 runtime: shiny
 ---
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+<!-- We need to remove this to include in the user interface -->
+<!-- ```{r setup, include=FALSE} -->
+<!-- knitr::opts_chunk$set(echo = TRUE) -->
+<!-- print("hello") -->
+<!-- ``` -->
 
 ## Search terms
 
