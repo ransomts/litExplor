@@ -8,6 +8,14 @@ runtime: shiny
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+## Library interface
+
+```{r}
+# Import eric interface
+source(knitr::purl("eric_interface.Rmd", output = tempfile(), quiet = TRUE))
+```
+
+
 ## Inputs and Outputs
 
 Term groups are comma deliminated, and newline separated
@@ -28,24 +36,28 @@ format_terms_input_to_search <- function(search_terms) {
   # TODO: Remove leading spaces from split inputs (More info below)
 
   # We split the string on new lines then pass the array of split strings to mapply which splits each line on commas
-  split_input <- mapply(strsplit, strsplit(search_terms, '\n'), MoreArgs = list(split = ','))
+  split_input <-
+    mapply(strsplit,
+           strsplit(search_terms, '\n'),
+           MoreArgs = list(split = ','))
 
   # We then combine the split strings with ORs on the same line and each line separated with ANDs
   # When we combine with ORs it produces a double space. This is because we're splitting on comma without the following space.
   # This could be changed if we want to disallow commas without spaces after or we could trim the spaces after.
-  return(paste(
-    "terms: ", paste(mapply(paste, split_input, MoreArgs = list(collapse = " OR ")), collapse = " AND ")
-  ))
+  return(paste("terms: ", paste(
+    mapply(paste, split_input, MoreArgs = list(collapse = " OR ")), collapse = " AND "
+  )))
 }
 
 # search_terms is the string input from the terms_input textArea
 format_terms_input_to_list <- function(search_terms) {
-  
   # split on newlines to search term groups
   term_groups <- t(str_split(search_terms, '\n', simplify = TRUE))
   
   # split term groups on comma, needs whitespace trimmed from terms
-  terms_list <- mapply(function(x) {str_split(x, ',')}, term_groups)
+  terms_list <- mapply(function(x) {
+    str_split(x, ',')
+  }, term_groups)
   
   return(rapply(terms_list, trimws, how = "replace"))
 }
@@ -57,8 +69,6 @@ inputPanel(
 )
 verbatimTextOutput("terms_output", placeholder = TRUE)
 
-# Import eric interface
-source(knitr::purl("eric_interface.Rmd", output = tempfile(), quiet=TRUE))
 
 display_button_event <- eventReactive(input$display_button, {
   # working simple text display
@@ -71,13 +81,18 @@ display_button_event <- eventReactive(input$display_button, {
   # Cartesian product now returns list of lists so this is fully functional
   cartesian_product_of_terms <- cartesian_product(term_powerset(format_terms_input_to_list(input$terms_input)))
   
-  eric_urls <- mapply(function(x) {create_eric_url(x, rows = 20, fields = list(list("peerreviewed", "'T'")))}, cartesian_product_of_terms)
+  eric_urls <- mapply(function(x) { create_eric_url(x, rows = 20, fields = list(list("peerreviewed", "'T'"))) }, cartesian_product_of_terms)
   
   eric_responses <- mapply(get_eric_json, eric_urls)
   
-  readable_terms <- mapply(function(x) { paste(x, collapse = " AND ")}, cartesian_product_of_terms)
+  readable_terms <- mapply(function(x) { paste(x, collapse = " AND ") }, cartesian_product_of_terms)
   
-  return(paste(readable_terms, eric_responses, sep = "\n", collapse = '\n\n'))
+  return(paste(
+    readable_terms,
+    eric_responses,
+    sep = "\n",
+    collapse = '\n\n'
+  ))
 })
 
 library(stringr)
