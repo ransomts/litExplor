@@ -31,6 +31,7 @@ Just a button that executes a hard coded ERIC search query, which is then displa
 
 ```{r eruptions, echo=FALSE}
 library(stringr)
+library(purrr)
 
 format_terms_input_to_search <- function(search_terms) {
   # TODO: Remove leading spaces from split inputs (More info below)
@@ -62,6 +63,24 @@ format_terms_input_to_list <- function(search_terms) {
   return(rapply(terms_list, trimws, how = "replace"))
 }
 
+format_product_into_string <- function(product) {
+    # We need to split on the same value as what is used in format_powerset
+    mapply(function(x) { strsplit(x, '```') }, product)
+}
+
+product_is_empty <- function(product) {
+  # First we create a list of booleans with each element representing if that index is not an empty string. 
+  # Then check if any are true
+  return(!any(mapply(function(x) { return(x != "") }, product) == TRUE))
+}
+
+product_contains_empty <- function(product) {
+  # First we create a list of booleans with each element representing if that index is not an empty string. 
+  # Then check if any are false
+  return(any(mapply(function(x) { return(x != "") }, product) == FALSE))
+}
+
+
 inputPanel(
   textAreaInput("terms_input", "Search", rows = 3,
                 value = "FAA, Part 147\ndistance learning, online education"),
@@ -71,21 +90,24 @@ verbatimTextOutput("terms_output", placeholder = TRUE)
 
 
 display_button_event <- eventReactive(input$display_button, {
-  # working simple text display
-  # paste(
-  #   "terms:\n", input$terms_input,
-  #   "First newline found at: ", str_locate(input$terms_input, "\n"),
-  #   "\n"
-  # )
-
-  # Cartesian product now returns list of lists so this is fully functional
-  cartesian_product_of_terms <- cartesian_product(term_powerset(format_terms_input_to_list(input$terms_input)))
+  powerset <- format_powerset(term_powerset(format_terms_input_to_list(input$terms_input)))
   
-  eric_urls <- mapply(function(x) { create_eric_url(x, rows = 20, fields = list(list("peerreviewed", "'T'"))) }, cartesian_product_of_terms)
+  cartesian_product_of_terms <- purrr::cross(powerset)
+
+  # Remove the empty element
+  cartesian_product_of_terms <- cartesian_product_of_terms[!mapply(product_is_empty, cartesian_product_of_terms)]
+  
+  contains_empty <- mapply(product_contains_empty, cartesian_product_of_terms)
+  
+  trimmed_products <- mapply(function(x) { return(x[x != ""]) }, cartesian_product_of_terms)
+  
+  formatted_products <- mapply(format_product_into_string, trimmed_products)
+  
+  eric_urls <- mapply(function(x) { create_eric_url(x, rows = 20, fields = list(list("peerreviewed", "'T'"))) }, formatted_products)
   
   eric_responses <- mapply(get_eric_json, eric_urls)
   
-  readable_terms <- mapply(function(x) { paste(x, collapse = " AND ") }, cartesian_product_of_terms)
+  readable_terms <- mapply(function(product) { paste(mapply(function(x) {paste(unlist(x), collapse = " OR ")}, product), collapse = " AND ") }, formatted_products)
   
   return(paste(
     readable_terms,
