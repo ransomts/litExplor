@@ -105,7 +105,19 @@ display_button_event <- eventReactive(input$display_button, {
   
   eric_urls <- mapply(function(x) { create_eric_url(x, rows = 20, fields = list(list("peerreviewed", "'T'"))) }, formatted_products)
   
-  eric_responses <- mapply(get_eric_json, eric_urls)
+  eric_responses = list()
+  
+  withProgress(message = 'Searching ERIC\n', value = 0, {
+    # Number of times we'll go through the loop
+    n <- length(eric_urls)
+
+    for (i in 1:n) {
+      eric_responses[[i]] <- get_eric_json(eric_urls[[i]])
+
+      # Increment the progress bar, and update the detail text.
+      incProgress(1/n, detail = paste("Searching URL", eric_urls[[i]]))
+    }
+  })
   
   readable_terms <- mapply(function(product) { paste(mapply(function(x) {paste(unlist(x), collapse = " OR ")}, product), collapse = " AND ") }, formatted_products)
   
