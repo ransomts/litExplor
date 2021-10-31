@@ -29,10 +29,15 @@ is interpreted as
 
 Just a button that executes a hard coded ERIC search query, which is then displayed below
 
-```{r eruptions, echo=FALSE}
+```{r echo=FALSE}
 library(stringr)
 library(purrr)
+library(ggplot2)
 library(knitr)
+
+
+plot_size <- 1600
+
 
 format_terms_input_to_search <- function(search_terms) {
   # TODO: Remove leading spaces from split inputs (More info below)
@@ -87,7 +92,7 @@ inputPanel(
                 value = "FAA, Part 147\ndistance learning, online education"),
   actionButton("display_button", "Display terms")
 )
-verbatimTextOutput("terms_output", placeholder = TRUE)
+plotOutput("terms_output", height = plot_size)
 
 
 display_button_event <- eventReactive(input$display_button, {
@@ -128,14 +133,25 @@ display_button_event <- eventReactive(input$display_button, {
   
   found_kable <- knitr::kable(num_found, align = 'c', col.names = c("Number Found"), label = "ERIC Results", caption = "Number of results found")
   
-  return(paste(found_kable, collapse = '\n'))
+  # return(found_kable, collapse = '\n')
+  found_df <- data.frame(
+    search = readable_terms,
+    number_found = num_found
+  )
+  
+  gplot <- ggplot(data=found_df, ggplot2::aes(x=search, y=number_found)) +
+    geom_bar(stat="identity")
+  
+  gplot <- gplot + coord_cartesian(ylim= c(-5,250))
+  
+  return(gplot + theme(axis.text.x=element_text(size = 15, angle = -90, hjust = 0)))
 })
 
 library(stringr)
 
-output$terms_output <- renderText({
-  display_button_event()
-})
+output$terms_output <- renderPlot({
+  display_button_event()},
+  res = 72)
 ```
 
 ## Visualizations
