@@ -12,6 +12,12 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 # Import eric interface
+library(stringr)
+library(stringr)
+library(purrr)
+library(ggplot2)
+library(knitr)
+
 source(knitr::purl("eric_interface.Rmd", output = tempfile(), quiet = TRUE))
 ```
 
@@ -20,21 +26,18 @@ source(knitr::purl("eric_interface.Rmd", output = tempfile(), quiet = TRUE))
 
 Term groups are comma deliminated, and newline separated
 For example:
-```{text}
-foo, bar
-foobie
+
+> foo, bar
+> foobie
+
 is interpreted as
-("foo" OR "bar") AND ("foobie")
-```
+
+> ("foo" OR "bar") AND ("foobie")
+
 
 Just a button that executes a hard coded ERIC search query, which is then displayed below
 
 ```{r echo=FALSE}
-library(stringr)
-library(purrr)
-library(ggplot2)
-library(knitr)
-
 
 plot_size <- 1600
 
@@ -45,8 +48,8 @@ format_terms_input_to_search <- function(search_terms) {
   # We split the string on new lines then pass the array of split strings to mapply which splits each line on commas
   split_input <-
     mapply(strsplit,
-           strsplit(search_terms, '\n'),
-           MoreArgs = list(split = ','))
+           strsplit(search_terms, "\n"),
+           MoreArgs = list(split = ","))
 
   # We then combine the split strings with ORs on the same line and each line separated with ANDs
   # When we combine with ORs it produces a double space. This is because we're splitting on comma without the following space.
@@ -59,29 +62,29 @@ format_terms_input_to_search <- function(search_terms) {
 # search_terms is the string input from the terms_input textArea
 format_terms_input_to_list <- function(search_terms) {
   # split on newlines to search term groups
-  term_groups <- t(str_split(search_terms, '\n', simplify = TRUE))
-  
+  term_groups <- t(stringr::str_split(search_terms, "\n", simplify = TRUE))
+
   # split term groups on comma, needs whitespace trimmed from terms
   terms_list <- mapply(function(x) {
-    str_split(x, ',')
+    stringr::str_split(x, ",")
   }, term_groups)
-  
+
   return(rapply(terms_list, trimws, how = "replace"))
 }
 
 format_product_into_string <- function(product) {
     # We need to split on the same value as what is used in format_powerset
-    mapply(function(x) { strsplit(x, '```') }, product)
+    mapply(function(x) { strsplit(x, "```") }, product)
 }
 
 product_is_empty <- function(product) {
-  # First we create a list of booleans with each element representing if that index is not an empty string. 
+  # First we create a list of booleans with each element representing if that index is not an empty string.
   # Then check if any are true
   return(!any(mapply(function(x) { return(x != "") }, product) == TRUE))
 }
 
 product_contains_empty <- function(product) {
-  # First we create a list of booleans with each element representing if that index is not an empty string. 
+  # First we create a list of booleans with each element representing if that index is not an empty string.
   # Then check if any are false
   return(any(mapply(function(x) { return(x != "") }, product) == FALSE))
 }
@@ -94,26 +97,30 @@ inputPanel(
 )
 plotOutput("terms_output", height = plot_size)
 
+```
 
+### Button logic
+
+```{r echo=FALSE}
 display_button_event <- eventReactive(input$display_button, {
   powerset <- format_powerset(term_powerset(format_terms_input_to_list(input$terms_input)))
-  
+
   cartesian_product_of_terms <- purrr::cross(powerset)
 
   # Remove the empty element
   cartesian_product_of_terms <- cartesian_product_of_terms[!mapply(product_is_empty, cartesian_product_of_terms)]
-  
+
   contains_empty <- mapply(product_contains_empty, cartesian_product_of_terms)
-  
+
   trimmed_products <- mapply(function(x) { return(x[x != ""]) }, cartesian_product_of_terms)
-  
+
   formatted_products <- mapply(format_product_into_string, trimmed_products)
-  
+
   eric_urls <- mapply(function(x) { create_eric_url(x, rows = 20, fields = list(list("peerreviewed", "'T'"))) }, formatted_products)
-  
-  eric_responses = list()
-  
-  withProgress(message = 'Searching ERIC\n', value = 0, {
+
+  eric_responses <- list()
+
+  withProgress(message = "Searching ERIC\n", value = 0, {
     # Number of times we'll go through the loop
     n <- length(eric_urls)
 
@@ -121,33 +128,33 @@ display_button_event <- eventReactive(input$display_button, {
       eric_responses[[i]] <- get_eric_json(eric_urls[[i]])
 
       # Increment the progress bar, and update the detail text.
-      incProgress(1/n, detail = paste("Searching URL", eric_urls[[i]]))
+      incProgress(1 / n, detail = paste("Searching URL", eric_urls[[i]]))
     }
   })
-  
+
   readable_terms <- mapply(function(product) { paste(mapply(function(x) {paste(unlist(x), collapse = " OR ")}, product), collapse = " AND ") }, formatted_products)
-  
-  num_found <- mapply(function(x) { return(x$response$numFound) }, eric_responses) 
-  
+
+  num_found <- mapply(function(x) { return(x$response$numFound) }, eric_responses)
+
   names(num_found) <- readable_terms
-  
-  found_kable <- knitr::kable(num_found, align = 'c', col.names = c("Number Found"), label = "ERIC Results", caption = "Number of results found")
-  
-  # return(found_kable, collapse = '\n')
+
+  found_kable <- knitr::kable(num_found, align = "c", col.names = c("Number Found"), label = "ERIC Results", caption = "Number of results found")
+
+  # return(found_kable, collapse = "\n")
   found_df <- data.frame(
     search = readable_terms,
     number_found = num_found
   )
-  
-  gplot <- ggplot(data=found_df, ggplot2::aes(x=search, y=number_found)) +
-    geom_bar(stat="identity")
-  
-  gplot <- gplot + coord_cartesian(ylim= c(-5,250))
-  
-  return(gplot + theme(axis.text.x=element_text(size = 15, angle = -90, hjust = 0)))
+
+  gplot <- ggplot(data = found_df, ggplot2::aes(x = search, y = number_found)) +
+    geom_bar(stat = "identity")
+
+  gplot <- gplot + coord_cartesian(ylim = c(-5, 250))
+
+  return(gplot + theme(axis.text.x = element_text(size = 15, angle = -90, hjust = 0)))
 })
 
-library(stringr)
+
 
 output$terms_output <- renderPlot({
   display_button_event()},
