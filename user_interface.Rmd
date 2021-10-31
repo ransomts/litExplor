@@ -132,13 +132,18 @@ display_button_event <- eventReactive(input$display_button, {
     }
   })
 
-  readable_terms <- mapply(function(product) { paste(mapply(function(x) {paste(unlist(x), collapse = " OR ")}, product), collapse = " AND ") }, formatted_products)
+  readable_terms <- mapply(function(product) { paste(mapply(function(x) { paste(unlist(x), collapse = " OR ")}, product), collapse = " AND ") }, formatted_products)
 
   num_found <- mapply(function(x) { return(x$response$numFound) }, eric_responses)
 
   names(num_found) <- readable_terms
 
-  found_kable <- knitr::kable(num_found, align = "c", col.names = c("Number Found"), label = "ERIC Results", caption = "Number of results found")
+  found_kable <- knitr::kable(
+    num_found,
+    align = "c",
+    col.names = c("Number Found"),
+    label = "ERIC Results",
+    caption = "Number of results found")
 
   # return(found_kable, collapse = "\n")
   found_df <- data.frame(
