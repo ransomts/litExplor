@@ -32,6 +32,7 @@ Just a button that executes a hard coded ERIC search query, which is then displa
 ```{r eruptions, echo=FALSE}
 library(stringr)
 library(purrr)
+library(knitr)
 
 format_terms_input_to_search <- function(search_terms) {
   # TODO: Remove leading spaces from split inputs (More info below)
@@ -121,12 +122,13 @@ display_button_event <- eventReactive(input$display_button, {
   
   readable_terms <- mapply(function(product) { paste(mapply(function(x) {paste(unlist(x), collapse = " OR ")}, product), collapse = " AND ") }, formatted_products)
   
-  return(paste(
-    readable_terms,
-    eric_responses,
-    sep = "\n",
-    collapse = '\n\n'
-  ))
+  num_found <- mapply(function(x) { return(x$response$numFound) }, eric_responses) 
+  
+  names(num_found) <- readable_terms
+  
+  found_kable <- knitr::kable(num_found, align = 'c', col.names = c("Number Found"), label = "ERIC Results", caption = "Number of results found")
+  
+  return(paste(found_kable, collapse = '\n'))
 })
 
 library(stringr)
