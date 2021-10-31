@@ -4,20 +4,23 @@ output: html_document
 runtime: shiny
 ---
 
-```{r setup, include=FALSE}
+```{r setup, echo=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Library interface
 
-```{r}
+```{r echo=FALSE}
 # Import eric interface
 library(stringr)
 library(stringr)
 library(purrr)
 library(ggplot2)
 library(knitr)
+```
 
+We pull in our eric functions from eric_interface.Rmd
+```{r}
 source(knitr::purl("eric_interface.Rmd", output = tempfile(), quiet = TRUE))
 ```
 
@@ -28,6 +31,7 @@ Term groups are comma deliminated, and newline separated
 For example:
 
 > foo, bar
+>
 > foobie
 
 is interpreted as
@@ -88,18 +92,20 @@ product_contains_empty <- function(product) {
   # Then check if any are false
   return(any(mapply(function(x) { return(x != "") }, product) == FALSE))
 }
+```
 
+## Input Panel
 
+```{r echo=FALSE}
 inputPanel(
   textAreaInput("terms_input", "Search", rows = 3,
                 value = "FAA, Part 147\ndistance learning, online education"),
   actionButton("display_button", "Display terms")
 )
 plotOutput("terms_output", height = plot_size)
-
 ```
 
-### Button logic
+### Button logic (hidden (for now))
 
 ```{r echo=FALSE}
 display_button_event <- eventReactive(input$display_button, {
@@ -116,7 +122,8 @@ display_button_event <- eventReactive(input$display_button, {
 
   formatted_products <- mapply(format_product_into_string, trimmed_products)
 
-  eric_urls <- mapply(function(x) { create_eric_url(x, rows = 20, fields = list(list("peerreviewed", "'T'"))) }, formatted_products)
+  eric_urls <- mapply(function(x) {
+      create_eric_url(x, rows = 20, fields = list(list("peerreviewed", "'T'"))) }, formatted_products)
 
   eric_responses <- list()
 
@@ -132,7 +139,9 @@ display_button_event <- eventReactive(input$display_button, {
     }
   })
 
-  readable_terms <- mapply(function(product) { paste(mapply(function(x) { paste(unlist(x), collapse = " OR ")}, product), collapse = " AND ") }, formatted_products)
+  readable_terms <- mapply(function(product) {
+      paste(mapply(function(x) {
+          paste(unlist(x), collapse = " OR ")}, product), collapse = " AND ") }, formatted_products)
 
   num_found <- mapply(function(x) { return(x$response$numFound) }, eric_responses)
 
@@ -158,12 +167,6 @@ display_button_event <- eventReactive(input$display_button, {
 
   return(gplot + theme(axis.text.x = element_text(size = 15, angle = -90, hjust = 0)))
 })
-
-
-
-output$terms_output <- renderPlot({
-  display_button_event()},
-  res = 72)
 ```
 
 ## Visualizations
@@ -174,3 +177,9 @@ Ideas for helpful graphs:
 * flame chart
 * something interactive? checkbox matrix?
 * tree breakdowns, roots are total sums of term groups
+
+```{r echo=FALSE}
+output$terms_output <- renderPlot({
+  display_button_event()},
+  res = 72)
+```
