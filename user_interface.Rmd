@@ -109,22 +109,25 @@ plotOutput("terms_output", height = plot_size)
 
 ```{r echo=FALSE}
 display_button_event <- eventReactive(input$display_button, {
-  powerset <- format_powerset(term_powerset(format_terms_input_to_list(input$terms_input)))
-
-  cartesian_product_of_terms <- purrr::cross(powerset)
-
-  # Remove the empty element
+  
+  cartesian_product_of_terms <- input$terms_input %>%
+    format_terms_input_to_list %>%
+    term_powerset %>%
+    format_powerset %>%
+    purrr::cross()
+  
   cartesian_product_of_terms <- cartesian_product_of_terms[!mapply(product_is_empty, cartesian_product_of_terms)]
 
-  contains_empty <- mapply(product_contains_empty, cartesian_product_of_terms)
-
-  trimmed_products <- mapply(function(x) { return(x[x != ""]) }, cartesian_product_of_terms)
-
-  formatted_products <- mapply(format_product_into_string, trimmed_products)
-
-  eric_urls <- mapply(function(x) {
-      create_eric_url(x, rows = 20, fields = list(list("peerreviewed", "'T'"))) }, formatted_products)
-
+  contains_empty <- 
+    cartesian_product_of_terms %>% 
+    map(product_contains_empty)
+  formatted_products <- cartesian_product_of_terms %>% 
+    map(function(x) { return(x[x != ""]) }) %>%
+    map(format_product_into_string)
+    
+  eric_urls <- formatted_products %>%
+    map(function(x) { create_eric_url(x, rows = 20, fields = list(list("peerreviewed", "'T'"))) })
+ 
   eric_responses <- list()
 
   withProgress(message = "Searching ERIC\n", value = 0, {
