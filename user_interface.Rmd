@@ -94,7 +94,142 @@ product_contains_empty <- function(product) {
 }
 ```
 
+
 ## Input Panel
+```{r echo=FALSE}
+# Helper Functions
+
+split_terms_string <- function(str) {
+    cartesian_product_of_terms <- str %>%
+    format_terms_input_to_list %>%
+    term_powerset %>%
+    format_powerset %>%
+    purrr::cross()
+  
+  cartesian_product_of_terms <- cartesian_product_of_terms[!mapply(product_is_empty, cartesian_product_of_terms)]
+
+  contains_empty <- 
+    cartesian_product_of_terms %>% 
+    map(product_contains_empty)
+  formatted_products <- cartesian_product_of_terms %>% 
+    map(function(x) { return(x[x != ""]) }) %>%
+    map(format_product_into_string)
+  
+  return(formatted_products)
+}
+
+search_eric_from_products <- function(formatted_products, options) {
+  
+  eric_urls <- formatted_products %>%
+  map(function(x) { create_eric_url(x, rows = 20, fields = options) })
+ 
+  eric_responses <- list()
+
+  withProgress(message = "Searching ERIC\n", value = 0, {
+    # Number of times we'll go through the loop
+    n <- length(eric_urls)
+
+    for (i in 1:n) {
+      eric_responses[[i]] <- get_eric_json(eric_urls[[i]])
+
+      # Increment the progress bar, and update the detail text.
+      incProgress(1 / n, detail = paste("Searching URL", eric_urls[[i]]))
+    }
+  })
+  
+  return(eric_responses)
+}
+```
+
+
+```{r echo=FALSE}
+# Define UI
+ui <- fluidPage(
+
+  # App title ----
+  titlePanel("Tabsets"),
+
+  # Sidebar layout with input and output definitions
+  sidebarLayout(
+
+    # Sidebar panel for inputs
+    sidebarPanel(
+
+      # Input for terms and options
+      textAreaInput("terms", "Terms", value = ""),
+      checkboxInput("peer", "Peer Reviewed", value = FALSE),
+      actionButton("search", "Search", class = "btn-success"),
+      br(),
+      
+    ),
+
+    # Main panel for displaying outputs
+    mainPanel(
+
+      # Output: Tabset w/ comparison, summary
+      tabsetPanel(type = "tabs",
+                  tabPanel("Compare", tableOutput("compare")),
+                  tabPanel("Summary", textOutput("summary"))
+      )
+    )
+  )
+)
+
+# Define server logic for random distribution app
+
+test <- 0
+
+server <- function(input, output) {
+  # Reactive expression to generate the requested distribution ----
+  # This is called whenever the inputs change. The output functions
+  # defined below then use the value computed from this expression
+  
+    calculate_somthing <- function(str){
+      print(test)
+      test <<- test + 1
+      return(paste(str, "s"))
+    }
+  
+  observeEvent(input$search, {
+    
+    # Render a copy of terms because if we don't this function is called every time the terms are changed
+    output$summary <- renderText(paste(input$terms))
+    
+    formatted_products <- split_terms_string(input$terms)
+    
+    options <- list()
+    
+    if (input$peer) {
+      options[[length(options)+1]] = list("peerreviewed", "'T'")
+    }
+    
+    if (length(options) == 0) {
+      options[[1]] = list("*")
+    }
+    
+    eric_responses <- search_eric_from_products(formatted_products, options)
+    
+    readable_terms <- mapply(function(product) {
+      paste(mapply(function(x) {
+          paste(unlist(x), collapse = " OR ")}, product), collapse = " AND ") }, formatted_products)
+
+  num_found <- mapply(function(x) { return(x$response$numFound) }, eric_responses)
+
+    
+    
+    output$compare <- renderTable(num_found)
+    
+    print(input$terms) 
+    
+  })
+
+}
+
+library(shiny)
+
+shinyApp(ui, server)
+```
+
 
 ```{r echo=FALSE}
 inputPanel(
