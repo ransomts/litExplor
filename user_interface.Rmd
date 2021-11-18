@@ -120,20 +120,21 @@ split_terms_string <- function(str) {
 
 search_eric_from_products <- function(formatted_products, options) {
   
-  eric_urls <- formatted_products %>%
-  map(function(x) { create_eric_url(x, rows = 20, fields = options) })
- 
+  
+  
   eric_responses <- list()
 
   withProgress(message = "Searching ERIC\n", value = 0, {
     # Number of times we'll go through the loop
-    n <- length(eric_urls)
+    n <- length(formatted_products)
 
     for (i in 1:n) {
-      eric_responses[[i]] <- get_eric_json(eric_urls[[i]])
+      url <- create_eric_url(formatted_products[[i]], rows = 20, fields = options)
+      
+      eric_responses[[i]] <- get_eric_json(url)
 
       # Increment the progress bar, and update the detail text.
-      incProgress(1 / n, detail = eric_urls[[i]])
+      incProgress(1 / n, detail = url)
     }
   })
   
