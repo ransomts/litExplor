@@ -174,7 +174,7 @@ ui <- fluidPage(
   )
 )
 
-num_found_for_terms <- list()
+num_found_for_terms <- matrix()
 
 server <- function(input, output) {
   
@@ -198,32 +198,14 @@ server <- function(input, output) {
     
     # Logic for the summary tab
     
-    formatted_products <- split_terms_string(input$term_dropdown)
-    
-    readable_terms <- mapply(function(product) {
-      paste(mapply(function(x) {
-          paste(unlist(x), collapse = " OR ")}, product), collapse = " AND ") }, formatted_products)
-    
-    print(readable_terms)
-    
-    terms_df <- as.matrix(num_found_for_terms)
-    
-    print(terms_df)
-    
-    randomData <- hasseDiagram::generateRandomData(15, 2, 0.5)
-    
-    print(randomData)
-    
-    print(as.matrix(terms_df))
-    
-    output$summary <- renderPlot({ hasseDiagram::hasse(as.matrix(terms_df)) }, height = 100, width = 100)
+    # TODO: Add hasse diagram
     
     }
     else {
       output$compare <- renderUI({ 
         verbatimTextOutput("placeholder")
         })
-      output$placeholder <- renderText({"Select A First Term Set First"})
+      output$placeholder <- renderText({"Select A Term Set First"})
     }
   })
   
@@ -235,13 +217,11 @@ server <- function(input, output) {
   })
   
   observeEvent(input$compare_btn, {
+    # TODO: Add logic for comparison
     
   })
   
   observeEvent(input$search, {
-    
-    # TODO: Implement a summary mechanism
-    output$summary <- renderText(paste(input$terms))
     
     formatted_products <- split_terms_string(input$terms)
     
@@ -260,11 +240,15 @@ server <- function(input, output) {
     readable_terms <- mapply(function(product) {
       paste(mapply(function(x) {
           paste(unlist(x), collapse = " OR ")}, product), collapse = " AND ") }, formatted_products)
-
-    num_found <- mapply(function(x) { return(x$response$numFound) }, eric_responses)
     
-    num_found_for_terms <<- num_found
-  
+    num_found <- mapply(function(x) { return(x$response$numFound) }, eric_responses)
+
+    num_found_for_terms <<- t(apply(matrix(num_found), 2, rev))
+    
+    colnames(num_found_for_terms) <- readable_terms
+    
+    print(num_found_for_terms)
+    
     terms_list <- mapply(function(x) { paste(x, collapse = ", ") }, format_terms_input_to_list(input$terms))
     
     output$term_dropdown <- renderUI({
