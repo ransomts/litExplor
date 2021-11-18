@@ -8,7 +8,6 @@ runtime: shiny
 <!-- We need to remove this to include in the user interface -->
 <!-- ```{r setup, include=FALSE} -->
 <!-- knitr::opts_chunk$set(echo = TRUE) -->
-<!-- print("hello") -->
 <!-- ``` -->
 
 ## Search terms
@@ -46,9 +45,65 @@ A table showing the cartesian product of the search "(a OR b) AND (1 OR 2)"
 ```
 
 ```{r}
+
+decimal_to_binary_list <- function(number) {
+  if (number == 0) {
+    return(list(0))
+  }
+  
+  out <- list()
+  len <- 1
+    
+  while (number >= 1) {
+    out[[len]] <- floor(number %% 2)
+    number <- floor(number / 2)
+    len <- len + 1
+  }
+  
+  return(out)
+}
+
+binary_mask <- function(set, binary_string) {
+  if (all(binary_string == 0)) {
+    return(list(""))
+  }
+  
+  out <- list()
+  
+  i <- 1
+  
+  for (bit in binary_string) {
+    if (bit == 1) {
+      out[[length(out) + 1]] <- set[[i]]
+    }
+    i <- i + 1
+  }
+  
+  return(out)
+}
+
+powerset <- function(set) {
+  set_as_list <- as.list(set)
+  
+  out <- list()
+  prev_binary <- list()
+  
+  i <- 0
+  
+  while (!(length(prev_binary) == length(set) && all(prev_binary == 1))) {
+     prev_binary <- decimal_to_binary_list(i)
+     
+     out[[length(out) + 1]] <- binary_mask(set_as_list, prev_binary)
+     i <- i + 1
+  }
+  
+  return(out)
+  
+}
+
 term_powerset <- function(search_terms) {
   # Create the powersets and convert empty values to empty vector
-  rapply(mapply(rje::powerSet, search_terms), function(x) {
+  rapply(mapply(powerset, search_terms), function(x) {
     if (length(x) == 0) {
       return(c(""))
     } else {
