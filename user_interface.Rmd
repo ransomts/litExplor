@@ -133,7 +133,7 @@ search_eric_from_products <- function(formatted_products, options) {
       eric_responses[[i]] <- get_eric_json(eric_urls[[i]])
 
       # Increment the progress bar, and update the detail text.
-      incProgress(1 / n, detail = paste("Searching URL", eric_urls[[i]]))
+      incProgress(1 / n, detail = eric_urls[[i]])
     }
   })
   
@@ -168,7 +168,7 @@ ui <- fluidPage(
       # Output: Dropdown menu for term set selection
       uiOutput("term_dropdown"),
       
-      # Output: Tabset w/ comparison, summary
+      # Output: Tabset w/ summary and comparison
       uiOutput("result_tabset")
     )
   )
@@ -180,7 +180,6 @@ server <- function(input, output) {
   
   observeEvent(input$term_dropdown, {
     
-    print(num_found_for_terms)
     
     if (all(input$term_dropdown != "")) {
     
@@ -247,8 +246,6 @@ server <- function(input, output) {
     
     colnames(num_found_for_terms) <- readable_terms
     
-    print(num_found_for_terms)
-    
     terms_list <- mapply(function(x) { paste(x, collapse = ", ") }, format_terms_input_to_list(input$terms))
     
     output$term_dropdown <- renderUI({
@@ -284,8 +281,6 @@ server <- function(input, output) {
       id = "result_tabset",
       tabPanel("Summary", textOutput("summary"))) })
     }
-    
-    print(input$terms) 
     
   })
 

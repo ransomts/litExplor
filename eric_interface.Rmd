@@ -112,26 +112,6 @@ term_powerset <- function(search_terms) {
   }, how = "replace")
 }
 
-two_dimentional_cartesian_product <- function(first_powerset, second_powerset) {
-    # This function does not take advantage of R magic too much so it can probably be optimized
-    # Also it only works with two powersets with the same size
-
-    # We initialize some variables
-    out <- list()
-    i <- 1
-
-    # We loop through all the values in second powerset
-    for (operand in second_powerset) {
-      # We combine every thing from the first powerset with the current element in the second powerset
-      out[[i]] <- mapply(function(x) { append(x, operand) }, first_powerset)
-      # We move to the next index in the out list and get the next element in the second powerset
-      i <- i + 1
-    }
-
-    # We trim the whitespace of each product and return the resulting list
-    return(out)
-  }
-
 format_powerset <- function(powerset) {
   # We turn the powersets into a one dimensional list so we can format each set with a special string in between
   # This can be changed but we don't want to use something common because we'll need to split on it later.
@@ -139,33 +119,6 @@ format_powerset <- function(powerset) {
   
   # We then need to split the list by empty strings so that we can use each powerset individually
   split(compacted_list, cumsum(data.frame(compacted_list)[, 1] == ""))
-}
-
-
-recursive_cartesian_product <- function(powersets, index = 1) {
-  # This check is for when we want to stop recursion
-  # It also acts as a way to calculate a two dimensional product without recursion
-  if (index + 1 ==  length(powersets[1, ])) {
-    out <- two_dimentional_cartesian_product(powersets[, index], powersets[, index + 1])
-  }
-  else {
-    # When we need to calculate a three or more dimension cartesian product we first calculate the product of the first two powersets.
-    # Then we calculate another two dimensional product using the next powerset as the first operand and the result of the previous calculation as the second
-    out <- two_dimentional_cartesian_product(powersets[, index],
-                                        recursive_cartesian_product(powersets, index + 1))
-  }
-  trimmed_out <- rapply(out, function(x) { x[x != ""] }, how = "replace")
-  
-  # Trim the empty results
-  return(trimmed_out)
-}
-
-cartesian_product <- function(powersets) {
-  # We use our recursive cartesian product function to calculate the product using our formatted powersets
-  out <- recursive_cartesian_product(powersets)
-  
-  # Our recursive cartesian product function returns a list of lists of lists which is one too many lists so we have to unlist it
-  return(unlist(out, recursive = FALSE))
 }
 ```
 
