@@ -97,8 +97,8 @@ product_contains_empty <- function(product) {
 
 ## Input Panel
 ```{r echo=FALSE}
-# Helper Functions
 
+# Helper Functions
 split_terms_string <- function(str) {
     cartesian_product_of_terms <- str %>%
     format_terms_input_to_list %>%
@@ -146,7 +146,6 @@ search_eric_from_products <- function(formatted_products, options) {
 # Define UI
 ui <- fluidPage(
 
-  # App title ----
   titlePanel("Tabsets"),
 
   # Sidebar layout with input and output definitions
@@ -166,33 +165,82 @@ ui <- fluidPage(
     # Main panel for displaying outputs
     mainPanel(
 
+      # Output: Dropdown menu for term set selection
+      uiOutput("term_dropdown"),
+      
       # Output: Tabset w/ comparison, summary
-      tabsetPanel(type = "tabs",
-                  tabPanel("Compare", tableOutput("compare")),
-                  tabPanel("Summary", textOutput("summary"))
-      )
+      uiOutput("result_tabset")
     )
   )
 )
 
-# Define server logic for random distribution app
-
-test <- 0
+num_found_for_terms <- list()
 
 server <- function(input, output) {
-  # Reactive expression to generate the requested distribution ----
-  # This is called whenever the inputs change. The output functions
-  # defined below then use the value computed from this expression
   
-    calculate_somthing <- function(str){
-      print(test)
-      test <<- test + 1
-      return(paste(str, "s"))
+  observeEvent(input$term_dropdown, {
+    
+    print(num_found_for_terms)
+    
+    if (all(input$term_dropdown != "")) {
+    
+    terms_list <- mapply(function(x) { paste(x, collapse = ", ") }, format_terms_input_to_list(input$terms))
+    
+      
+    terms_trimmed <- terms_list[!mapply(function(x) { all(input$term_dropdown == x) }, terms_list)]
+        
+    
+    # Logic for the compare tab
+    output$compare <- renderUI({ selectInput(
+      "compare",
+      "",
+      c("Select A Compare Term Set" = "", terms_trimmed)) })
+    
+    # Logic for the summary tab
+    
+    formatted_products <- split_terms_string(input$term_dropdown)
+    
+    readable_terms <- mapply(function(product) {
+      paste(mapply(function(x) {
+          paste(unlist(x), collapse = " OR ")}, product), collapse = " AND ") }, formatted_products)
+    
+    print(readable_terms)
+    
+    terms_df <- as.matrix(num_found_for_terms)
+    
+    print(terms_df)
+    
+    randomData <- hasseDiagram::generateRandomData(15, 2, 0.5)
+    
+    print(randomData)
+    
+    print(as.matrix(terms_df))
+    
+    output$summary <- renderPlot({ hasseDiagram::hasse(as.matrix(terms_df)) }, height = 100, width = 100)
+    
     }
+    else {
+      output$compare <- renderUI({ 
+        verbatimTextOutput("placeholder")
+        })
+      output$placeholder <- renderText({"Select A First Term Set First"})
+    }
+  })
+  
+  
+  observeEvent(input$compare, {
+    if (all(input$compare != "")) {
+      output$compare_btn <- renderUI({actionButton("compare_btn", "Compare", class = "btn-success")})
+    }
+  })
+  
+  observeEvent(input$compare_btn, {
+    
+  })
   
   observeEvent(input$search, {
     
-    # Render a copy of terms because if we don't this function is called every time the terms are changed
+    # TODO: Implement a summary mechanism
     output$summary <- renderText(paste(input$terms))
     
     formatted_products <- split_terms_string(input$terms)
@@ -200,11 +248,11 @@ server <- function(input, output) {
     options <- list()
     
     if (input$peer) {
-      options[[length(options)+1]] = list("peerreviewed", "'T'")
+      options[[length(options) + 1]] <- list("peerreviewed", "'T'")
     }
     
     if (length(options) == 0) {
-      options[[1]] = list("*")
+      options[[1]] <- list("*")
     }
     
     eric_responses <- search_eric_from_products(formatted_products, options)
@@ -213,11 +261,45 @@ server <- function(input, output) {
       paste(mapply(function(x) {
           paste(unlist(x), collapse = " OR ")}, product), collapse = " AND ") }, formatted_products)
 
-  num_found <- mapply(function(x) { return(x$response$numFound) }, eric_responses)
+    num_found <- mapply(function(x) { return(x$response$numFound) }, eric_responses)
+    
+    num_found_for_terms <<- num_found
+  
+    terms_list <- mapply(function(x) { paste(x, collapse = ", ") }, format_terms_input_to_list(input$terms))
+    
+    output$term_dropdown <- renderUI({
+      selectInput(
+      "term_dropdown",
+      "",
+      c("Select A Compare Term Set" = "", terms_list))
+      })
+    
+    if (length(terms_list) != 1) { 
 
-    
-    
-    output$compare <- renderTable(num_found)
+      output$result_tabset <- renderUI({ tabsetPanel(type = "tabs",
+            id = "result_tabset",
+            tabPanel("Summary", textOutput("summary")),
+            tabPanel("Compare", mainPanel(
+                    uiOutput("compare"),
+                    uiOutput("compare_btn")))) })
+      
+#      output$compare <- renderUI( { wellPanel(
+#                    uiOutput("first_compare"),
+#                    selectInput(
+#                      "first_compare",
+#                      "Select Term Sets",
+#                      c("Select A Term Set" = "", terms_list))) } )
+#      
+#      output$first_compare <- renderUI({selectInput(
+#                      "first_compare",
+#                      "Select Term Sets",
+#                      c("Select A Term Set" = "", terms_list))})
+    }
+    else {
+      output$result_tabset <- renderUI({ tabsetPanel(type = "tabs",
+      id = "result_tabset",
+      tabPanel("Summary", textOutput("summary"))) })
+    }
     
     print(input$terms) 
     
