@@ -86,15 +86,9 @@ powerset <- function(set) {
   set_as_list <- as.list(set)
   
   out <- list()
-  prev_binary <- list()
   
-  i <- 0
-  
-  while (!(length(prev_binary) == length(set) && all(prev_binary == 1))) {
-     prev_binary <- decimal_to_binary_list(i)
-     
-     out[[length(out) + 1]] <- binary_mask(set_as_list, prev_binary)
-     i <- i + 1
+  for (i in 0:(2^length(set)-1)) {
+     out[[length(out) + 1]] <- binary_mask(set_as_list, decimal_to_binary_list(i))
   }
   
   return(out)
