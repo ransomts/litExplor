@@ -43,7 +43,7 @@ Just a button that executes a hard coded ERIC search query, which is then displa
 
 ```{r echo=FALSE}
 
-plot_size <- 1600
+plot_size <- 160
 
 
 format_terms_input_to_search <- function(search_terms) {
@@ -98,7 +98,9 @@ product_contains_empty <- function(product) {
 ## Input Panel
 ```{r echo=FALSE}
 
-empty_space <- "Nothing"
+empty_space <- "--"
+
+terms <- list()
 
 # Helper Functions
 split_terms_string <- function(str) {
@@ -133,8 +135,6 @@ search_eric_from_products <- function(formatted_products, options) {
       paste(mapply(function(x) { 
           paste(unlist(x), collapse = " or ")}, product), collapse = " and ") }, formatted_products)
   
-  print(paste(readable_terms))
-  
   eric_responses <- list()
 
   withProgress(message = "Searching ERIC\n", value = 0, {
@@ -158,53 +158,92 @@ search_eric_from_products <- function(formatted_products, options) {
   return(num_found)
 }
 
+find_data_by_row_col <- function(row, col, numbers) {
+  
+  if (row == empty_space && col == empty_space) {
+    return(NaN)
+  }
+    
+  if (!(paste(row, "and", col) %in% names(numbers))) {
+    row <- paste0(row,col)
+    col <- substr(row,0,nchar(row) - nchar(col))
+    row <- substr(row,nchar(col) + 1, nchar(row))
+  }
+      
+  if (row == empty_space) {
+    find_string <- col
+  }
+  else if (col == empty_space) {
+    find_string <- row
+  }
+  else {
+    find_string <- paste(row, "and", col)
+  }
+  
+  return(numbers[find_string])
+}
+
 create_compare_graph <- function(first_set, second_set) {
   first_formatted <- mapply(function(x) {
           paste(unlist(x), collapse = " or ")}, format_product_into_string(first_set))
-    
+
   first_formatted[[1]] <- empty_space
-    
+
   second_formatted <- mapply(function(x) {
           paste(unlist(x), collapse = " or ")}, format_product_into_string(second_set))
-    
+
   second_formatted[[1]] <- empty_space
-    
+
   compare_matrix <- matrix(nrow = length(first_formatted), ncol = length(second_formatted))
-    
+
   rownames(compare_matrix) <- first_formatted
-    
+
   colnames(compare_matrix) <- second_formatted
-    
+  
   compare_matrix <- fill_compare_matrix(compare_matrix, num_found_for_terms)
   
-  print(compare_matrix)
-    
-  return(renderTable(compare_matrix, align = "l", rownames = TRUE, bordered = TRUE))
+  return(renderTable(compare_matrix, align = "l", rownames = TRUE, bordered = TRUE, digits = 0, na = ""))
 }
 
+create_summary_graph <- function(set) {
+  formatted_set <- mapply(function(x) {
+          paste(unlist(x), collapse = " or ")}, format_product_into_string(set))
+
+  formatted_set <- formatted_set[-1]
+  
+  summary_list <- vector(length = length(formatted_set))
+  
+  names(summary_list) <- formatted_set
+  
+  summary_list <- fill_summary_list(summary_list, num_found_for_terms)
+  
+  summary_df <- data.frame(terms = formatted_set, found = summary_list)
+  
+  rownames(summary_df) <- NULL
+  
+  theme_set(theme_classic())
+  
+  gplot <- ggplot(data = summary_df, aes(x = terms, y = found)) +
+    geom_bar(stat = "identity")
+  
+  gplot <- gplot + scale_y_log10(n.breaks = 10, labels = scales::label_number())
+  
+  return(renderPlot(gplot + theme(axis.text.x = element_text(size = 10, angle = -90, hjust = 0)), height = 600, width = 400))
+}
+
+fill_summary_list <- function(list, numbers) {
+  mapply(function(name) {
+    list[name] <<- find_data_by_row_col(name, empty_space, numbers)
+  }, names(list))
+
+  return(list)
+}
 
 fill_compare_matrix <- function(matrix, numbers) {
-  find_string <- ""
   mapply(function(rowname) {
     mapply(function(colname) {
-      if (rowname == empty_space) {
-        if (colname == empty_space) {
-          return()
-        } 
-        find_string <- colname
-      }
-      else if (colname == empty_space) {
-        find_string <- rowname
-      }
-      else {
-        find_string <- paste(rowname, "and", colname)
-      }
-      
-      print(rowname)
-      
-      print(colname)
-      
-      matrix[rowname, colname] <<- numbers[find_string]
+    
+      matrix[rowname, colname] <<- find_data_by_row_col(rowname, colname, numbers)
       
     }, colnames(matrix))
   }, rownames(matrix))
@@ -242,7 +281,7 @@ ui <- fluidPage(
     sidebarPanel(
 
       # Input for terms and options
-      textAreaInput("terms", "Terms", value = "test, terms\nmore, terms"),
+      textAreaInput("terms", "Terms", value = "FAA, Part 147\ndistance learning, online education"),
       checkboxInput("peer", "Peer Reviewed", value = FALSE),
       actionButton("search", "Search", class = "btn-success"),
       br(),
@@ -251,6 +290,45 @@ ui <- fluidPage(
 
     # Main panel for displaying outputs
     mainPanel(
+      
+      tags$script("
+      var show_compare_table = false
+      var show_summary_graph = false
+      
+      Shiny.addCustomMessageHandler('hide_compare_table', function(message) {
+        show_compare_table = false
+      });
+      
+      Shiny.addCustomMessageHandler('show_compare_table', function(message) {
+        console.log('sct')
+        show_compare_table = true
+      })
+      
+      Shiny.addCustomMessageHandler('set_show_compare_table', function(boolean) {
+        show_compare_table = boolean
+      })
+      
+      function compare_table_is_shown() {
+        return show_compare_table
+      }
+      
+      Shiny.addCustomMessageHandler('hide_summary_graph', function(message) {
+        show_summary_graph = false
+      });
+      
+      Shiny.addCustomMessageHandler('show_summary_graph', function(message) {
+        console.log('sct')
+        show_summary_graph = true
+      })
+      
+      Shiny.addCustomMessageHandler('set_show_summary_graph', function(boolean) {
+        show_summary_graph = boolean
+      })
+      
+      function summary_graph_is_shown() {
+        return show_summary_graph
+      }
+    "),
       
       br(),
 
@@ -272,7 +350,7 @@ compare_count <- 1
 
 summary_count <- 1
 
-server <- function(input, output) {
+server <- function(input, output, session) {
   
 #  observeEvent(input$add_tab, {
 #    showModal(modalDialog(
@@ -284,57 +362,69 @@ server <- function(input, output) {
 #  ))
 #  })
   
-  observeEvent(input$term_dropdown, {
+  observeEvent(input$summary_dropdown, {
   
-    if (all(input$term_dropdown != "")) {
+    if (all(input$summary_dropdown != "")) {
     
-    terms_list <- mapply(function(x) { paste(x, collapse = " or ") }, format_terms_input_to_list(input$terms))
+    terms_list <- mapply(function(x) { paste(x, collapse = " or ") }, format_terms_input_to_list(terms))
     
     names(terms_list) <- terms_list
     
-      
-    terms_trimmed <- terms_list[!mapply(function(x) { all(input$term_dropdown == x) }, terms_list)]
-        
+    # Logic for the summary tab
+    output$summary_graph <- create_summary_graph(unlist(str_split(input$summary_dropdown, " or "), recursive = FALSE) %>% powerset %>% format_powerset)
     
-    # Logic for the compare tab
-    output$compare_dropdown <- renderUI({ selectInput(
-      "compare_dropdown",
+    session$sendCustomMessage("show_summary_graph", "")
+    
+    }
+  })
+  
+  observeEvent(input$compare_dropdown1, {
+    
+    if (all(input$compare_dropdown1 != "")) {
+      
+      terms_list <- mapply(function(x) { paste(x, collapse = " or ") }, format_terms_input_to_list(terms))
+    
+      names(terms_list) <- terms_list
+      
+      terms_trimmed <- terms_list[!mapply(function(x) { all(input$compare_dropdown1 == x) }, terms_list)]
+      
+      output$compare_dropdown2 <- renderUI({ selectInput(
+      "compare_dropdown2",
       "",
       c("Select A Compare Term Set" = "", terms_trimmed)) })
-    
-    
-    # Logic for the summary tab
-    # TODO: Add hasse diagram
-    
-    }
+   
+    }   
     else {
-      output$compare_dropdown <- renderUI({ 
-        verbatimTextOutput("placeholder")
-        })
-      output$placeholder <- renderText({"Select A Term Set First"})
+    output$compare_dropdown2 <- renderUI({ 
+      verbatimTextOutput("placeholder")
+      })
+    output$placeholder <- renderText({"Select A First Term Set"})
     }
+      
   })
   
   
-  observeEvent(input$compare_dropdown, {
-    if (all(input$compare_dropdown != "")) {
-      output$compare_btn <- renderUI({actionButton("compare_btn", "Compare", class = "btn-success")})
-    }
-  })
-  
-  observeEvent(input$compare_btn, {
+  observeEvent(input$compare_dropdown2, {
+    if (all(input$compare_dropdown2 != "")) {
+      
+    first_term_set <- unlist(str_split(input$compare_dropdown1, " or "), recursive = FALSE) %>% powerset %>% format_powerset
     
-    first_term_set <- unlist(str_split(input$term_dropdown, " or "), recursive = FALSE) %>% powerset %>% format_powerset
+    second_term_set <- unlist(str_split(input$compare_dropdown2, " or "), recursive = FALSE) %>% powerset %>% format_powerset
     
-    second_term_set <- unlist(str_split(input$compare_dropdown, " or "), recursive = FALSE) %>% powerset %>% format_powerset
+    session$sendCustomMessage("show_compare_table", "")
     
     output$compare_table <- create_compare_graph(first_term_set, second_term_set)
-    
+    }
   })
   
   observeEvent(input$search, {
     
-    formatted_products <- split_terms_string(input$terms)
+    terms <<- input$terms
+    
+    session$sendCustomMessage("hide_compare_table", "")
+    session$sendCustomMessage("hide_summary_graph", "")
+    
+    formatted_products <- split_terms_string(terms)
     
     options <- list()
     
@@ -354,48 +444,44 @@ server <- function(input, output) {
       paste(mapply(function(x) {
           paste(unlist(x), collapse = " or ")}, product), collapse = " and ") }, formatted_products)
     
-    num_found_for_terms <<- num_found 
-    #data.frame("terms" = readable_terms, "found" = )
+    num_found_for_terms <<- num_found
     
-    terms_list <- mapply(function(x) { paste(x, collapse = " or ") }, format_terms_input_to_list(input$terms))
+    terms_list <- mapply(function(x) { paste(x, collapse = " or ") }, format_terms_input_to_list(terms))
     
     names(terms_list) <- terms_list
-    
-    output$term_dropdown <- renderUI({
-      selectInput(
-      "term_dropdown",
-      "",
-      c("Select A Compare Term Set" = "", terms_list))
-      })
     
     if (length(terms_list) != 1) { 
       
       output$result_tabset <- renderUI({ mainPanel(tabsetPanel(
-            tabPanel("Summary", mainPanel(textOutput("summary"))),
+            tabPanel("Summary", mainPanel(uiOutput("summary_dropdown"), conditionalPanel("summary_graph_is_shown()", plotOutput("summary_graph")))),
             tabPanel("Compare", mainPanel(
-                    uiOutput("compare_dropdown"),
+                    uiOutput("compare_dropdown1"),
+                    uiOutput("compare_dropdown2"),
                     uiOutput("compare_btn"),
                     br(),
-                    tableOutput("compare_table"))))
+                    conditionalPanel("compare_table_is_shown()",
+                    tableOutput("compare_table")))))
             ) })
-      
-#      output$compare <- renderUI( { wellPanel(
-#                    uiOutput("first_compare"),
-#                    selectInput(
-#                      "first_compare",
-#                      "Select Term Sets",
-#                      c("Select A Term Set" = "", terms_list))) } )
-#      
-#      output$first_compare <- renderUI({selectInput(
-#                      "first_compare",
-#                      "Select Term Sets",
-#                      c("Select A Term Set" = "", terms_list))})
+            
+            output$compare_dropdown1 <- renderUI({
+      selectInput(
+      "compare_dropdown1",
+      "",
+      c("Select A Term Set" = "", terms_list))
+      })
     }
     else {
       output$result_tabset <- renderUI({ tabsetPanel(type = "tabs",
       id = "result_tabset",
-      tabPanel("Summary", textOutput("summary"))) })
+      tabPanel("Summary", mainPanel(plotOutput("summary_graph")))) })
     }
+    
+    output$summary_dropdown <- renderUI({
+      selectInput(
+      "summary_dropdown",
+      "",
+      c("Select A Term Set" = "", terms_list))
+      })
     
   })
 
