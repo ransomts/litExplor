@@ -102,6 +102,10 @@ empty_space <- "--"
 
 terms <- list()
 
+number_input_boxes <- 1
+
+num_found_for_terms <- list()
+
 # Helper Functions
 split_terms_string <- function(str) {
     cartesian_product_of_terms <- str %>%
@@ -165,9 +169,9 @@ find_data_by_row_col <- function(row, col, numbers) {
   }
     
   if (!(paste(row, "and", col) %in% names(numbers))) {
-    row <- paste0(row,col)
-    col <- substr(row,0,nchar(row) - nchar(col))
-    row <- substr(row,nchar(col) + 1, nchar(row))
+    row <- paste0(row, col)
+    col <- substr(row, 0, nchar(row) - nchar(col))
+    row <- substr(row, nchar(col) + 1, nchar(row))
   }
       
   if (row == empty_space) {
@@ -250,6 +254,16 @@ fill_compare_matrix <- function(matrix, numbers) {
   
   return(matrix)
 }
+
+get_input_terms <- function(input) {
+  terms_list <- list()
+  
+  sapply(1:number_input_boxes, function(x) {
+    terms_list[[length(terms_list) + 1]] <<- input[[paste0("terms", x)]]
+  })
+  
+  return(terms_list)
+}
 ```
 
 ```{r eval=FALSE}
@@ -281,9 +295,10 @@ ui <- fluidPage(
     sidebarPanel(
 
       # Input for terms and options
-      textAreaInput("terms", "Terms", value = "FAA, Part 147\ndistance learning, online education"),
+      textInput("terms1", "Term Set", value = "FAA, Part 147"),
+      actionButton("add_term_set", "Add Term Set", class = "btn-success"),
       checkboxInput("peer", "Peer Reviewed", value = FALSE),
-      actionButton("search", "Search", class = "btn-success"),
+      actionButton("search", "Search", class = "btn-primary"),
       br(),
       
     ),
@@ -300,7 +315,6 @@ ui <- fluidPage(
       });
       
       Shiny.addCustomMessageHandler('show_compare_table', function(message) {
-        console.log('sct')
         show_compare_table = true
       })
       
@@ -344,23 +358,7 @@ ui <- fluidPage(
   )
 )
 
-num_found_for_terms <- list()
-
-compare_count <- 1
-
-summary_count <- 1
-
 server <- function(input, output, session) {
-  
-#  observeEvent(input$add_tab, {
-#    showModal(modalDialog(
-#      wellPanel(actionButton("add_summary", "Summary", class = "btn-success", width = "49.5%"), actionButton("add_compare", "Compare", class = "btn-success", width = "49.5%")),
-#      title = "Add Tab",
-#      footer = modalButton("Dismiss"),
-#      size = "m",
-#      easyClose = TRUE,
-#  ))
-#  })
   
   observeEvent(input$summary_dropdown, {
   
@@ -417,9 +415,22 @@ server <- function(input, output, session) {
     }
   })
   
+  observeEvent(input$add_term_set, {
+    
+    input_box <- textInput(paste0("terms", number_input_boxes + 1), "")
+    
+    insertUI(
+      selector = paste0("#terms", number_input_boxes),
+      where = "afterEnd",
+      ui = input_box
+    )
+    
+    number_input_boxes <<- number_input_boxes + 1
+  })
+  
   observeEvent(input$search, {
     
-    terms <<- input$terms
+    terms <<- get_input_terms(input)
     
     session$sendCustomMessage("hide_compare_table", "")
     session$sendCustomMessage("hide_summary_graph", "")
