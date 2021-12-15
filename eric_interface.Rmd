@@ -109,9 +109,15 @@ term_powerset <- function(search_terms) {
 format_powerset <- function(powerset) {
   # We turn the powersets into a one dimensional list so we can format each set with a special string in between
   # This can be changed but we don't want to use something common because we'll need to split on it later.
-  compacted_list <- mapply(paste, powerset, MoreArgs = list(collapse = "```")) 
+  
+  if (class(powerset[[1]][[1]]) == "list") {
+    powerset <- unlist(powerset, recursive = FALSE)
+  }
+  
+  compacted_list <- mapply(function(x) { paste(x, collapse = "```") }, powerset)
   
   # We then need to split the list by empty strings so that we can use each powerset individually
+  
   split(compacted_list, cumsum(data.frame(compacted_list)[, 1] == ""))
 }
 ```
