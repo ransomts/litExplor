@@ -13,10 +13,10 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r echo=FALSE}
 # Import eric interface
 library(stringr)
-library(stringr)
 library(purrr)
 library(ggplot2)
 library(knitr)
+library(shiny)
 ```
 
 We pull in our eric functions from eric_interface.Rmd
@@ -43,7 +43,7 @@ Just a button that executes a hard coded ERIC search query, which is then displa
 
 ```{r echo=FALSE}
 
-plot_size <- 1600
+plot_size <- 160
 
 
 format_terms_input_to_search <- function(search_terms) {
@@ -59,7 +59,7 @@ format_terms_input_to_search <- function(search_terms) {
   # When we combine with ORs it produces a double space. This is because we're splitting on comma without the following space.
   # This could be changed if we want to disallow commas without spaces after or we could trim the spaces after.
   return(paste("terms: ", paste(
-    mapply(paste, split_input, MoreArgs = list(collapse = " OR ")), collapse = " AND "
+    mapply(paste, split_input, MoreArgs = list(collapse = " or ")), collapse = " and "
   )))
 }
 
@@ -94,23 +94,17 @@ product_contains_empty <- function(product) {
 }
 ```
 
+
 ## Input Panel
-
 ```{r echo=FALSE}
-inputPanel(
-  textAreaInput("terms_input", "Search", rows = 3,
-                value = "FAA, Part 147\ndistance learning, online education"),
-  actionButton("display_button", "Display terms")
-)
-plotOutput("terms_output", height = plot_size)
-```
 
-### Button logic (hidden (for now))
+empty_space <- "--"
 
-```{r echo=FALSE}
-display_button_event <- eventReactive(input$display_button, {
-  
-  cartesian_product_of_terms <- input$terms_input %>%
+terms <- list()
+
+# Helper Functions
+split_terms_string <- function(str) {
+    cartesian_product_of_terms <- str %>%
     format_terms_input_to_list %>%
     term_powerset %>%
     format_powerset %>%
@@ -124,10 +118,23 @@ display_button_event <- eventReactive(input$display_button, {
   formatted_products <- cartesian_product_of_terms %>% 
     map(function(x) { return(x[x != ""]) }) %>%
     map(format_product_into_string)
-    
+  
+  return(formatted_products)
+}
+
+##   formatted_products <- cartesian_product_of_terms %>% 
+##    map(function(x) { return(x[x != ""]) }) %>%
+##    map(format_product_into_string)
+
+search_eric_from_products <- function(formatted_products, options) {
+  
   eric_urls <- formatted_products %>%
     map(function(x) { create_eric_url(x, rows = 20, fields = list(list("peerreviewed", "'T'"))) })
  
+  readable_terms <- mapply(function(product) {
+      paste(mapply(function(x) { 
+          paste(unlist(x), collapse = " or ")}, product), collapse = " and ") }, formatted_products)
+  
   eric_responses <- list()
 
   withProgress(message = "Searching ERIC\n", value = 0, {
@@ -141,48 +148,344 @@ display_button_event <- eventReactive(input$display_button, {
       incProgress(1 / n, detail = paste("Searching URL", eric_urls[[i]]))
     }
   })
-
-  readable_terms <- mapply(function(product) {
-      paste(mapply(function(x) {
-          paste(unlist(x), collapse = " OR ")}, product), collapse = " AND ") }, formatted_products)
-
+  
+  names(eric_responses) <- readable_terms
+  
   num_found <- mapply(function(x) { return(x$response$numFound) }, eric_responses)
 
   names(num_found) <- readable_terms
+  
+  return(num_found)
+}
 
-  found_kable <- knitr::kable(
-    num_found,
-    align = "c",
-    col.names = c("Number Found"),
-    label = "ERIC Results",
-    caption = "Number of results found")
+find_data_by_row_col <- function(row, col, numbers) {
+  
+  if (row == empty_space && col == empty_space) {
+    return(NaN)
+  }
+    
+  if (!(paste(row, "and", col) %in% names(numbers))) {
+    row <- paste0(row,col)
+    col <- substr(row,0,nchar(row) - nchar(col))
+    row <- substr(row,nchar(col) + 1, nchar(row))
+  }
+      
+  if (row == empty_space) {
+    find_string <- col
+  }
+  else if (col == empty_space) {
+    find_string <- row
+  }
+  else {
+    find_string <- paste(row, "and", col)
+  }
+  
+  return(numbers[find_string])
+}
 
-  # return(found_kable, collapse = "\n")
-  found_df <- data.frame(
-    search = readable_terms,
-    number_found = num_found
-  )
+create_compare_graph <- function(first_set, second_set) {
+  first_formatted <- mapply(function(x) {
+          paste(unlist(x), collapse = " or ")}, format_product_into_string(first_set))
 
-  gplot <- ggplot(data = found_df, ggplot2::aes(x = search, y = number_found)) +
+  first_formatted[[1]] <- empty_space
+
+  second_formatted <- mapply(function(x) {
+          paste(unlist(x), collapse = " or ")}, format_product_into_string(second_set))
+
+  second_formatted[[1]] <- empty_space
+
+  compare_matrix <- matrix(nrow = length(first_formatted), ncol = length(second_formatted))
+
+  rownames(compare_matrix) <- first_formatted
+
+  colnames(compare_matrix) <- second_formatted
+  
+  compare_matrix <- fill_compare_matrix(compare_matrix, num_found_for_terms)
+  
+  return(renderTable(compare_matrix, align = "l", rownames = TRUE, bordered = TRUE, digits = 0, na = ""))
+}
+
+create_summary_graph <- function(set) {
+  formatted_set <- mapply(function(x) {
+          paste(unlist(x), collapse = " or ")}, format_product_into_string(set))
+
+  formatted_set <- formatted_set[-1]
+  
+  summary_list <- vector(length = length(formatted_set))
+  
+  names(summary_list) <- formatted_set
+  
+  summary_list <- fill_summary_list(summary_list, num_found_for_terms)
+  
+  summary_df <- data.frame(terms = formatted_set, found = summary_list)
+  
+  rownames(summary_df) <- NULL
+  
+  theme_set(theme_classic())
+  
+  gplot <- ggplot(data = summary_df, aes(x = terms, y = found)) +
     geom_bar(stat = "identity")
+  
+  gplot <- gplot + scale_y_log10(n.breaks = 10, labels = scales::label_number())
+  
+  return(renderPlot(gplot + theme(axis.text.x = element_text(size = 10, angle = -90, hjust = 0)), height = 600, width = 400))
+}
 
-  gplot <- gplot + coord_cartesian(ylim = c(-5, 250))
+fill_summary_list <- function(list, numbers) {
+  mapply(function(name) {
+    list[name] <<- find_data_by_row_col(name, empty_space, numbers)
+  }, names(list))
 
-  return(gplot + theme(axis.text.x = element_text(size = 15, angle = -90, hjust = 0)))
-})
+  return(list)
+}
+
+fill_compare_matrix <- function(matrix, numbers) {
+  mapply(function(rowname) {
+    mapply(function(colname) {
+    
+      matrix[rowname, colname] <<- find_data_by_row_col(rowname, colname, numbers)
+      
+    }, colnames(matrix))
+  }, rownames(matrix))
+  
+  return(matrix)
+}
 ```
 
-## Visualizations
+```{r eval=FALSE}
+  withProgress(message = "Searching ERIC\n", value = 0, {
+    # Number of times we'll go through the loop
+    n <- length(formatted_products)
 
-Ideas for helpful graphs:
+    for (i in 1:n) {
+      url <- create_eric_url(formatted_products[[i]], rows = 20, fields = options)
+      
+      eric_responses[[i]] <- get_eric_json(url)
 
-* venn diagram
-* flame chart
-* something interactive? checkbox matrix?
-* tree breakdowns, roots are total sums of term groups
+      # Increment the progress bar, and update the detail text.
+      incProgress(1 / n, detail = url)
+    }
+  })
+```
 
 ```{r echo=FALSE}
-output$terms_output <- renderPlot({
-  display_button_event()},
-  res = 72)
+# Define UI
+ui <- fluidPage(
+
+  titlePanel("Search"),
+
+  # Sidebar layout with input and output definitions
+  sidebarLayout(
+    
+    # Sidebar panel for inputs
+    sidebarPanel(
+
+      # Input for terms and options
+      textAreaInput("terms", "Terms", value = "FAA, Part 147\ndistance learning, online education"),
+      checkboxInput("peer", "Peer Reviewed", value = FALSE),
+      actionButton("search", "Search", class = "btn-success"),
+      br(),
+      
+    ),
+
+    # Main panel for displaying outputs
+    mainPanel(
+      
+      tags$script("
+      var show_compare_table = false
+      var show_summary_graph = false
+      
+      Shiny.addCustomMessageHandler('hide_compare_table', function(message) {
+        show_compare_table = false
+      });
+      
+      Shiny.addCustomMessageHandler('show_compare_table', function(message) {
+        console.log('sct')
+        show_compare_table = true
+      })
+      
+      Shiny.addCustomMessageHandler('set_show_compare_table', function(boolean) {
+        show_compare_table = boolean
+      })
+      
+      function compare_table_is_shown() {
+        return show_compare_table
+      }
+      
+      Shiny.addCustomMessageHandler('hide_summary_graph', function(message) {
+        show_summary_graph = false
+      });
+      
+      Shiny.addCustomMessageHandler('show_summary_graph', function(message) {
+        console.log('sct')
+        show_summary_graph = true
+      })
+      
+      Shiny.addCustomMessageHandler('set_show_summary_graph', function(boolean) {
+        show_summary_graph = boolean
+      })
+      
+      function summary_graph_is_shown() {
+        return show_summary_graph
+      }
+    "),
+      
+      br(),
+
+      # Output: Dropdown menu for term set selection
+      uiOutput("term_dropdown"),
+      
+      # Output: Button to add a new tab
+      uiOutput("add_tab"),
+      
+      # Output: Tabset w/ summary and comparison
+      uiOutput("result_tabset")
+    )
+  )
+)
+
+num_found_for_terms <- list()
+
+compare_count <- 1
+
+summary_count <- 1
+
+server <- function(input, output, session) {
+  
+#  observeEvent(input$add_tab, {
+#    showModal(modalDialog(
+#      wellPanel(actionButton("add_summary", "Summary", class = "btn-success", width = "49.5%"), actionButton("add_compare", "Compare", class = "btn-success", width = "49.5%")),
+#      title = "Add Tab",
+#      footer = modalButton("Dismiss"),
+#      size = "m",
+#      easyClose = TRUE,
+#  ))
+#  })
+  
+  observeEvent(input$summary_dropdown, {
+  
+    if (all(input$summary_dropdown != "")) {
+    
+    terms_list <- mapply(function(x) { paste(x, collapse = " or ") }, format_terms_input_to_list(terms))
+    
+    names(terms_list) <- terms_list
+    
+    # Logic for the summary tab
+    output$summary_graph <- create_summary_graph(unlist(str_split(input$summary_dropdown, " or "), recursive = FALSE) %>% powerset %>% format_powerset)
+    
+    session$sendCustomMessage("show_summary_graph", "")
+    
+    }
+  })
+  
+  observeEvent(input$compare_dropdown1, {
+    
+    if (all(input$compare_dropdown1 != "")) {
+      
+      terms_list <- mapply(function(x) { paste(x, collapse = " or ") }, format_terms_input_to_list(terms))
+    
+      names(terms_list) <- terms_list
+      
+      terms_trimmed <- terms_list[!mapply(function(x) { all(input$compare_dropdown1 == x) }, terms_list)]
+      
+      output$compare_dropdown2 <- renderUI({ selectInput(
+      "compare_dropdown2",
+      "",
+      c("Select A Compare Term Set" = "", terms_trimmed)) })
+   
+    }   
+    else {
+    output$compare_dropdown2 <- renderUI({ 
+      verbatimTextOutput("placeholder")
+      })
+    output$placeholder <- renderText({"Select A First Term Set"})
+    }
+      
+  })
+  
+  
+  observeEvent(input$compare_dropdown2, {
+    if (all(input$compare_dropdown2 != "")) {
+      
+    first_term_set <- unlist(str_split(input$compare_dropdown1, " or "), recursive = FALSE) %>% powerset %>% format_powerset
+    
+    second_term_set <- unlist(str_split(input$compare_dropdown2, " or "), recursive = FALSE) %>% powerset %>% format_powerset
+    
+    session$sendCustomMessage("show_compare_table", "")
+    
+    output$compare_table <- create_compare_graph(first_term_set, second_term_set)
+    }
+  })
+  
+  observeEvent(input$search, {
+    
+    terms <<- input$terms
+    
+    session$sendCustomMessage("hide_compare_table", "")
+    session$sendCustomMessage("hide_summary_graph", "")
+    
+    formatted_products <- split_terms_string(terms)
+    
+    options <- list()
+    
+    if (input$peer) {
+      options[[length(options) + 1]] <- list("peerreviewed", "'T'")
+    }
+    
+    if (length(options) == 0) {
+      options[[1]] <- list("*")
+    }
+    
+    num_found <- search_eric_from_products(formatted_products, options)
+    
+    terms_list <- format_terms_input_to_list(formatted_products)
+    
+    readable_terms <- mapply(function(product) {
+      paste(mapply(function(x) {
+          paste(unlist(x), collapse = " or ")}, product), collapse = " and ") }, formatted_products)
+    
+    num_found_for_terms <<- num_found
+    
+    terms_list <- mapply(function(x) { paste(x, collapse = " or ") }, format_terms_input_to_list(terms))
+    
+    names(terms_list) <- terms_list
+    
+    if (length(terms_list) != 1) { 
+      
+      output$result_tabset <- renderUI({ mainPanel(tabsetPanel(
+            tabPanel("Summary", mainPanel(uiOutput("summary_dropdown"), conditionalPanel("summary_graph_is_shown()", plotOutput("summary_graph")))),
+            tabPanel("Compare", mainPanel(
+                    uiOutput("compare_dropdown1"),
+                    uiOutput("compare_dropdown2"),
+                    uiOutput("compare_btn"),
+                    br(),
+                    conditionalPanel("compare_table_is_shown()",
+                    tableOutput("compare_table")))))
+            ) })
+            
+            output$compare_dropdown1 <- renderUI({
+      selectInput(
+      "compare_dropdown1",
+      "",
+      c("Select A Term Set" = "", terms_list))
+      })
+    }
+    else {
+      output$result_tabset <- renderUI({ tabsetPanel(type = "tabs",
+      id = "result_tabset",
+      tabPanel("Summary", mainPanel(plotOutput("summary_graph")))) })
+    }
+    
+    output$summary_dropdown <- renderUI({
+      selectInput(
+      "summary_dropdown",
+      "",
+      c("Select A Term Set" = "", terms_list))
+      })
+    
+  })
+
+}
+
+shinyApp(ui, server, options = list(height = 700))
 ```
