@@ -20,15 +20,14 @@ library(shiny)
 ```
 
 We pull in our eric functions from eric_interface.Rmd
+
 ```{r}
 source(knitr::purl("eric_interface.Rmd", output = tempfile(), quiet = TRUE))
 ```
 
-
 ## Inputs and Outputs
 
-Term groups are comma deliminated, and newline separated
-For example:
+Term groups are comma deliminated, and newline separated For example:
 
 > foo, bar
 >
@@ -37,7 +36,6 @@ For example:
 is interpreted as
 
 > ("foo" OR "bar") AND ("foobie")
-
 
 Just a button that executes a hard coded ERIC search query, which is then displayed below
 
@@ -94,8 +92,8 @@ product_contains_empty <- function(product) {
 }
 ```
 
-
 ## Input Panel
+
 ```{r echo=FALSE}
 
 empty_space <- "--"
@@ -133,7 +131,7 @@ split_terms_string <- function(str) {
 search_eric_from_products <- function(formatted_products, options) {
   
   eric_urls <- formatted_products %>%
-    map(function(x) { create_eric_url(x, rows = 20, fields = list(list("peerreviewed", "'T'"))) })
+    map(function(x) { create_eric_url(x, rows = 1, fields = list(list("peerreviewed", "'T'"))) })
  
   readable_terms <- mapply(function(product) {
       paste(mapply(function(x) { 
@@ -149,7 +147,7 @@ search_eric_from_products <- function(formatted_products, options) {
       eric_responses[[i]] <- get_eric_json(eric_urls[[i]])
 
       # Increment the progress bar, and update the detail text.
-      incProgress(1 / n, detail = paste("Searching URL", eric_urls[[i]]))
+      incProgress(1 / n, detail = eric_urls[[i]])
     }
   })
   
@@ -187,16 +185,19 @@ find_data_by_row_col <- function(row, col, numbers) {
   return(numbers[find_string])
 }
 
+format_set_for_graph <- function(set) {
+  formatted <- mapply(function(x) {
+          paste(unlist(x), collapse = " or ")}, format_product_into_string(set))
+  
+  formatted[[1]] <- empty_space
+  
+  return(formatted)
+}
+
 create_compare_graph <- function(first_set, second_set) {
-  first_formatted <- mapply(function(x) {
-          paste(unlist(x), collapse = " or ")}, format_product_into_string(first_set))
+  first_formatted <- format_set_for_graph(first_set)
 
-  first_formatted[[1]] <- empty_space
-
-  second_formatted <- mapply(function(x) {
-          paste(unlist(x), collapse = " or ")}, format_product_into_string(second_set))
-
-  second_formatted[[1]] <- empty_space
+  second_formatted <- format_set_for_graph(second_set)
 
   compare_matrix <- matrix(nrow = length(first_formatted), ncol = length(second_formatted))
 
@@ -209,9 +210,20 @@ create_compare_graph <- function(first_set, second_set) {
   return(renderTable(compare_matrix, align = "l", rownames = TRUE, bordered = TRUE, digits = 0, na = ""))
 }
 
+fill_compare_matrix <- function(matrix, numbers) {
+  mapply(function(rowname) {
+    mapply(function(colname) {
+    
+      matrix[rowname, colname] <<- find_data_by_row_col(rowname, colname, numbers)
+      
+    }, colnames(matrix))
+  }, rownames(matrix))
+  
+  return(matrix)
+}
+
 create_summary_graph <- function(set) {
-  formatted_set <- mapply(function(x) {
-          paste(unlist(x), collapse = " or ")}, format_product_into_string(set))
+  formatted_set <- format_set_for_graph(set)
 
   formatted_set <- formatted_set[-1]
   
@@ -243,14 +255,103 @@ fill_summary_list <- function(list, numbers) {
   return(list)
 }
 
-fill_compare_matrix <- function(matrix, numbers) {
-  mapply(function(rowname) {
-    mapply(function(colname) {
+create_overview_graph <- function(sets_list) {
+  formatted_sets <- list()
+  
+  formatted_list <- list()
+  
+  mapply(function(set) {
+    formatted_sets[[length(formatted_sets) + 1]] <<- format_set_for_graph(set)
+    }, sets_list)
+  
+  number_of_sets <- length(formatted_sets)
+  
+  row_names <- c(formatted_sets[[2]])
+  
+  if (number_of_sets > 2) {
+  
+    for (i in number_of_sets:3) {
+      mapply(function (x) {
+        if (x != "") {
+          row_names[[length(row_names) + 1]] <<- x
+        }
+      }, formatted_sets[[i]])
+    }
+  
+  }
+  
+  col_names <- c(formatted_sets[[1]])
+  
+  if (number_of_sets > 2) {
     
-      matrix[rowname, colname] <<- find_data_by_row_col(rowname, colname, numbers)
+    for (i in 3:number_of_sets) {
+      mapply(function (x) {
+        if (x != "") {
+          col_names[[length(col_names) + 1]] <<- x
+        }
+      }, formatted_sets[[i]])
+    }
+  
+  }
+    
+  overview_matrix <- matrix(nrow = length(row_names), ncol = length(col_names))
+  
+  rownames(overview_matrix) <- row_names
+  
+  colnames(overview_matrix) <- col_names
+  
+  overview_matrix <- fill_overview_matrix(overview_matrix, num_found_for_terms)
+  
+  return(renderTable(overview_matrix, align = "l", rownames = TRUE, bordered = TRUE, digits = 0, na = ""))
+}
+
+fill_overview_matrix <- function(matrix, numbers) {
+  
+  last_empty_space <- length(colnames(matrix)) + 1
+  
+  col_stop <- last_empty_space
+  
+  for (row in rownames(matrix)) {
+    if (row == empty_space) {
+      col_stop <- last_empty_space
+    }
+    
+    for (col_number in 1:length(colnames(matrix))) {
+      print("rc:")
       
-    }, colnames(matrix))
-  }, rownames(matrix))
+      col <- colnames(matrix)[[col_number]]
+      
+      print(row)
+      
+      print(col)
+      
+      if (col == empty_space) {
+        last_empty_space <- col_number
+      }
+      
+      print(paste("les:", last_empty_space))
+      
+      print(paste("cs:", col_stop))
+      
+      if (col_number >= col_stop) {
+        break;
+      }
+      
+      matrix[row, col] <- find_data_by_row_col(row, col, numbers)
+    }
+  }
+  
+  first <- TRUE
+  
+  remove_col <- mapply(function(x) { if (first) { first <<- FALSE; return(TRUE) } 
+    return(x != empty_space) }, colnames(matrix))
+  
+  first <- TRUE
+  
+  remove_row <- mapply(function(x) { if (first) { first <<- FALSE; return(TRUE) } 
+  return(x != empty_space) }, rownames(matrix))
+  
+  matrix <- matrix[remove_row, remove_col]
   
   return(matrix)
 }
@@ -264,6 +365,18 @@ get_input_terms <- function(input) {
   
   return(terms_list)
 }
+
+add_term_set <- function() {
+    input_box <- textInput(paste0("terms", number_input_boxes + 1), "")
+    
+    insertUI(
+      selector = paste0("#terms", number_input_boxes),
+      where = "afterEnd",
+      ui = input_box
+    )
+    
+    number_input_boxes <<- number_input_boxes + 1
+}
 ```
 
 ```{r eval=FALSE}
@@ -272,7 +385,7 @@ get_input_terms <- function(input) {
     n <- length(formatted_products)
 
     for (i in 1:n) {
-      url <- create_eric_url(formatted_products[[i]], rows = 20, fields = options)
+      url <- create_eric_url(formatted_products[[i]], rows = 1, fields = options)
       
       eric_responses[[i]] <- get_eric_json(url)
 
@@ -297,7 +410,7 @@ ui <- fluidPage(
       # Input for terms and options
       textInput("terms1", "Term Set", value = "FAA, Part 147"),
       actionButton("add_term_set", "Add Term Set", class = "btn-success"),
-      checkboxInput("peer", "Peer Reviewed", value = FALSE),
+      checkboxInput("peer", "Peer Reviewed", value = TRUE),
       actionButton("search", "Search", class = "btn-primary"),
       br(),
       
@@ -306,6 +419,16 @@ ui <- fluidPage(
     # Main panel for displaying outputs
     mainPanel(
       
+      # Logic for reacting to key presses
+      tags$script('$(document).on("keydown",
+                 function (e) {
+                  if(e.which == 13) {
+                    
+                  }
+                 });
+                '),
+      
+      # Logic for showing and hiding various graphs
       tags$script("
       var show_compare_table = false
       var show_summary_graph = false
@@ -348,10 +471,7 @@ ui <- fluidPage(
 
       # Output: Dropdown menu for term set selection
       uiOutput("term_dropdown"),
-      
-      # Output: Button to add a new tab
-      uiOutput("add_tab"),
-      
+  
       # Output: Tabset w/ summary and comparison
       uiOutput("result_tabset")
     )
@@ -417,15 +537,8 @@ server <- function(input, output, session) {
   
   observeEvent(input$add_term_set, {
     
-    input_box <- textInput(paste0("terms", number_input_boxes + 1), "")
+    add_term_set()
     
-    insertUI(
-      selector = paste0("#terms", number_input_boxes),
-      where = "afterEnd",
-      ui = input_box
-    )
-    
-    number_input_boxes <<- number_input_boxes + 1
   })
   
   observeEvent(input$search, {
@@ -471,7 +584,9 @@ server <- function(input, output, session) {
                     uiOutput("compare_btn"),
                     br(),
                     conditionalPanel("compare_table_is_shown()",
-                    tableOutput("compare_table")))))
+                    tableOutput("compare_table")))),
+            tabPanel("Overview", mainPanel(uiOutput("overview_graph")))
+            )
             ) })
             
             output$compare_dropdown1 <- renderUI({
@@ -480,11 +595,23 @@ server <- function(input, output, session) {
       "",
       c("Select A Term Set" = "", terms_list))
       })
+            
+            formatted_terms <- list()
+            
+            mapply(function(x) { 
+              split_list <- unlist(str_split(x, ","), recursive = FALSE)
+              
+              split_list <- mapply(trimws, split_list)
+              
+              formatted_terms[[length(formatted_terms) + 1]] <<- split_list %>% powerset %>% format_powerset
+              }, terms)
+            
+            output$overview_graph <- create_overview_graph(formatted_terms)
     }
     else {
       output$result_tabset <- renderUI({ tabsetPanel(type = "tabs",
       id = "result_tabset",
-      tabPanel("Summary", mainPanel(plotOutput("summary_graph")))) })
+      tabPanel("Summary", mainPanel(uiOutput("summary_dropdown"), conditionalPanel("summary_graph_is_shown()", plotOutput("summary_graph"))))) })
     }
     
     output$summary_dropdown <- renderUI({
