@@ -1,0 +1,90 @@
+---
+title: "Interfacing with ERIC"
+author: 
+  - "Tim Ransom"
+  - "Moss Gallagher"
+date: \today
+output: html_document
+runtime: shiny
+---
+
+# Data structure
+
+
+```{r define-test-groups}
+search_terms <- list(list("community college", "higher education", "postsecondary education"),
+                     list("pandemic", "COVID-19"),
+                     list("online courses", "online learning",
+                        "educational technology", "distance education", "electronic learning"),
+                     list("hands on", "lab"),
+                     list("FAA", "part 147"))
+
+test_search_terms <- list(list("community college", "higher education"),
+                         list("online learning", "distance education"))
+```
+
+## Build term sets
+
+
+Input string - 'FAA OR Part 147'
+output - tibble with fill binary set
+
+developer choice to not support terms with ' OR ' inside them
+```{r}
+
+make_set <- function(input_terms) {
+  term_list <- unlist(str_split(input_terms, " OR "))
+  tib <- bind_rows(setNames(rep(0, length(term_list)), term_list))[0,]
+  return(tib)
+}
+
+test_set_a <- make_set("A OR B")
+View(test_set_a)
+test_set_b <- make_set("C OR D")
+test_set_c <- make_set("E OR F OR G")
+```
+
+```{r}
+
+set_to_group <- function(set, ...){
+  
+  nth_bit <- function(i, n) { bitwAnd(bitwShiftR(i, n - 1), 1) }
+  
+  tib <- tibble(set, ...)
+  tib_len <- length(tib)
+  
+  for (i in 2:2^tib_len - 1) {
+    tib %<>% add_row(!!! setNames(map(1:tib_len, ~ nth_bit(i, .)), names(.)))
+  }
+  
+  inital_set_names <- set %>% names %>% paste0(collapse = "_")
+  #tib %<>% nest(!!inital_set_names := names(set))
+  tib %<>% nest("{inital_set_names}" := names(set))
+
+  for (extra_set in list(...)) {
+    extra_set_names <- extra_set %>% names %>% paste0(collapse = "_")
+    tib %<>% nest("{extra_set_names}" := names(extra_set))
+  }
+
+  return(tib)
+}
+
+test_group_a <- set_to_group(test_set_a)
+test_group_a %>% View
+test_group_b <- set_to_group(test_set_c, test_set_b) 
+test_group_b %>% View
+```
+
+```{r}
+group_to_explor <- function(group) {
+  return(group %>% add_column(eric = NA, proquest = NA))
+}
+```
+
+
+```{r}
+get_eric_values <- function(explor) {
+  
+}
+```
+
