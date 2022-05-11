@@ -116,19 +116,39 @@ format_group_to_query <- function(group) {
                           str_squish() %>%
                           str_replace_all(pattern = " ", replacement = " OR ")))
   }
-  # add the ands
-  
+
   a <- enframe(query_acc) %>% unnest(value)
 
   enframed_acc <- expand_grid(query_acc[[1]]) %>% unnest
   
-  for (i in 2:length(query_acc)) {
-    enframed_acc %<>% expand_grid(query_acc[[i]]) %>% unnest
+  if (length(query_acc) > 1) {
+    for (i in 2:length(query_acc)) {
+      enframed_acc %<>% expand_grid(query_acc[[i]]) %>% unnest
+    }
   }
   
+  return(enframed_acc %>% 
+           reduce(paste) %>% 
+           str_squish() %>% 
+           str_replace_all(pattern = "(?<!OR) (?!OR)", replacement = " AND ") %>% 
+           unique)
+}
+
+make_query <- function(...) {
+  tmp_names <- ...names()
+  new_names <- c()
+  for (i in 1:...length()) {
+    if (...elt(i) == 1) {
+      new_names %<>% append(tmp_names[i])
+    }
+  }
   
-  return(enframed_acc %>% reduce(paste) %>% str_squish() %>% str_replace_all(pattern = "(?<!OR) (?!OR)", replacement = " AND ") %>% unique)
-  return(query_acc)
+  if (length(new_names) > 1) {
+    new_names %<>% paste(collapse = " OR ")
+  } else if (length(new_names) == 0) {
+    new_names <- ""
+  }
+  return(new_names)
 }
 
 format_group_to_query(test_group_b)
