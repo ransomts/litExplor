@@ -117,6 +117,15 @@ format_group_to_query <- function(group) {
                           str_replace_all(pattern = " ", replacement = " OR ")))
   }
   # add the ands
+  
+  a <- enframe(query_acc) %>% unnest(value)
+  
+  for (i in 1:length(query_acc)) {
+    query_set <- query_acc[i]
+    
+  }
+  
+  expand_grid(b, c) %>% reduce(paste) %>% str_squish() %>% str_replace_all(pattern = "(?<!OR) (?!OR)", replacement = " AND ")
   return(query_acc)
 }
 
