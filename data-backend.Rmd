@@ -119,13 +119,15 @@ format_group_to_query <- function(group) {
   # add the ands
   
   a <- enframe(query_acc) %>% unnest(value)
+
+  enframed_acc <- expand_grid(query_acc[[1]]) %>% unnest
   
-  for (i in 1:length(query_acc)) {
-    query_set <- query_acc[i]
-    
+  for (i in 2:length(query_acc)) {
+    enframed_acc %<>% expand_grid(query_acc[[i]]) %>% unnest
   }
   
-  expand_grid(b, c) %>% reduce(paste) %>% str_squish() %>% str_replace_all(pattern = "(?<!OR) (?!OR)", replacement = " AND ")
+  
+  return(enframed_acc %>% reduce(paste) %>% str_squish() %>% str_replace_all(pattern = "(?<!OR) (?!OR)", replacement = " AND ") %>% unique)
   return(query_acc)
 }
 
