@@ -41,9 +41,16 @@ test_set_a <- make_set("A OR B")
 View(test_set_a)
 test_set_b <- make_set("C OR D")
 test_set_c <- make_set("E OR F OR G")
+test_set_d <- make_set("H OR I")
+test_set_e <- make_set("J OR K OR L")
+test_set_f <- make_set("M OR N OR O OR P")
 ```
 
 ```{r def-set-to-group}
+generate_name_from_set <- function(set) {
+  return(set %>% names %>% paste0(collapse = "_"))
+}
+
 set_to_group <- function(set, ...){
   
   nth_bit <- function(i, n) { bitwAnd(bitwShiftR(i, n - 1), 1) }
@@ -55,12 +62,12 @@ set_to_group <- function(set, ...){
     tib %<>% add_row(!!! setNames(map(1:tib_len, ~ nth_bit(i, .)), names(.)))
   }
   
-  inital_set_names <- set %>% names %>% paste0(collapse = "_")
+  inital_set_names <- set %>% generate_name_from_set
   #tib %<>% nest(!!inital_set_names := names(set))
   tib %<>% nest("{inital_set_names}" := names(set))
 
   for (extra_set in list(...)) {
-    extra_set_names <- extra_set %>% names %>% paste0(collapse = "_")
+    extra_set_names <- extra_set %>% generate_name_from_set
     tib %<>% nest("{extra_set_names}" := names(extra_set))
   }
 
@@ -75,6 +82,7 @@ test_group_a <- set_to_group(test_set_a)
 test_group_a %>% View
 test_group_b <- set_to_group(test_set_c, test_set_b) 
 test_group_b %>% View
+test_group_c <- set_to_group(test_set_d, test_set_e, test_set_f)
 ```
 
 ```{r def-group-to-explor}
@@ -85,6 +93,34 @@ group_to_explor <- function(group) {
 
 
 ```{r get-eric-view-from-group}
+
+fully_unnest_tibble <- function(tib) {
+  unnested_tib <- tib 
+  for (col_name in tib %>% names) {
+    unnested_tib %<>% unnest(cols = c(!!col_name))
+  }
+  return(unnested_tib)
+}
+
+
+expan_grid <- function(tib, group) {
+  tib_acc <- c()
+  group_acc <- c()
+  for (element in group) {
+    for (col in tib) {
+      for (val in col) {
+        tib_acc %<>% append(val)
+        group_acc %<>% append(element)
+      }
+    }
+  }
+  
+  print(tib_acc)
+  print(group_acc)
+  
+  return(tibble(tib_acc, group_acc))
+}
+
 format_group_to_query <- function(group) {
 
   binary_recode <- function(data, term) {
@@ -151,7 +187,10 @@ make_query <- function(...) {
   return(new_names)
 }
 
-format_group_to_query(test_group_b)
+format_group_to_query(test_group_a)
+test_query_b <- format_group_to_query(test_group_b)
+test_query_against_group(test_query_b, test_group_b)
+test_query_c <- format_group_to_query(test_group_c)
 
 get_eric_counts <- function(group) {
   
