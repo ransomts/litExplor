@@ -8,8 +8,44 @@ output: html_document
 runtime: shiny
 ---
 
-# Data structure
+# Libraries
 
+```{r}
+library(tidyverse)
+library(magrittr)
+```
+# Convienience Functions
+
+```{r}
+fully_unnest_tibble <- function(tib) {
+  unnested_tib <- tib
+  for (col_name in tib %>% names) {
+    unnested_tib %<>% unnest(cols = c(!!col_name))
+  }
+  return(unnested_tib)
+}
+
+expan_grid <- function(tib, group) {
+  tib_acc <- c()
+  group_acc <- c()
+  for (element in group) {
+    for (col in tib) {
+      for (val in col) {
+        tib_acc %<>% append(val)
+        group_acc %<>% append(element)
+      }
+    }
+  }
+  
+  print(tib_acc)
+  print(group_acc)
+  
+  return(tibble(tib_acc, group_acc))
+}
+```
+
+
+# Data structure
 
 ```{r define-test-groups}
 search_terms <- list(list("community college", "higher education", "postsecondary education"),
@@ -33,7 +69,7 @@ developer choice to not support terms with ' OR ' inside them
 ```{r def-make-set}
 make_set <- function(input_terms) {
   term_list <- unlist(str_split(input_terms, " OR "))
-  tib <- bind_rows(setNames(rep(0, length(term_list)), term_list))[0,]
+  tib <- bind_rows(setNames(rep(FALSE, length(term_list)), term_list))[0,]
   return(tib)
 }
 
@@ -46,12 +82,17 @@ test_set_e <- make_set("J OR K OR L")
 test_set_f <- make_set("M OR N OR O OR P")
 ```
 
-```{r def-set-to-group}
-generate_name_from_set <- function(set) {
-  return(set %>% names %>% paste0(collapse = "_"))
-}
+## Build group
 
+make a full group from a collection of sets
+
+This is where the ANDs are put into the queries
+```{r def-set-to-group}
 set_to_group <- function(set, ...){
+  
+  generate_name_from_set <- function(set) {
+    return(set %>% names %>% paste0(collapse = "_"))
+  }
   
   nth_bit <- function(i, n) { bitwAnd(bitwShiftR(i, n - 1), 1) }
   
@@ -85,12 +126,121 @@ test_group_b %>% View
 test_group_c <- set_to_group(test_set_d, test_set_e, test_set_f)
 ```
 
+## Make queries
+
+Format the group/set data structure to a string that we can pass to our search
+engines
+
+For example:
+> A OR B AND C
+
+```{r get-eric-view-from-group}
+make_queries_for_group <- function(group) {
+
+  combine_augmented_sets <- function(set_a, set_b) {
+
+    combined_acc <- bind_cols(set_a %>%
+                                slice(0) %>%
+                                select(-query),
+                              set_b %>%
+                                slice(0))
+    
+    for (a_slice_index in 1:nrow(set_a)) {
+      a_slice <- set_a %>% slice(a_slice_index)
+      
+      for (b_slice_index in 1:nrow(set_b)) {
+        b_slice <- set_b %>% slice(b_slice_index)
+        
+        a_query <- select(a_slice, query)
+        b_query <- select(b_slice, query)
+        
+        combined_query <- paste(select(a_slice, query), 
+                                select(b_slice, query), sep = " AND ") 
+        
+        if (a_query == "" || b_query == "") {
+          combined_query <- paste0(select(a_slice, query), select(b_slice, query))
+        }
+        
+        a_terms <- a_slice %>% select(-query)
+        b_terms <- b_slice %>% select(-query)
+        
+        
+        combined_acc %<>% add_row(bind_cols(a_terms, b_terms, 
+                                            query = combined_query))
+      }
+    }
+    
+    return(combined_acc)
+  }
+  
+  make_queries_for_set <- function(set) {
+    
+    make_query <- function(...) {
+      tmp_names <- ...names()
+      new_names <- c()
+      for (i in 1:...length()) {
+        if (...elt(i) == 1) {
+          new_names %<>% append(tmp_names[i])
+        }
+      }
+      
+      if (length(new_names) > 1) {
+        new_names %<>% paste(collapse = " OR ")
+      } else if (length(new_names) == 0) {
+        new_names <- ""
+      }
+      return(new_names)
+    }
+    
+    return(pmap_chr(set, .f = make_query))
+  }
+  
+  set_names <- group %>% names
+  
+  augmented_set_tibs <- c()
+  for (set_name in set_names) {
+    
+    set_tib <- group %>%
+      select(set_name) %>%
+      unnest(cols = c(set_name)) %>% 
+      unique
+    
+    augmented_set_tib <- set_tib %>% 
+      add_column("query" := make_queries_for_set(set_tib))
+    
+    augmented_set_tibs %<>% append(list(augmented_set_tib))
+  }
+  
+  aug_query_tib_acc <- augmented_set_tibs[1] %>% pluck(1)
+  if (length(augmented_set_tibs) >= 2) {
+    
+    for (i in 2:length(augmented_set_tibs)) {
+      
+      aug_query_tib_acc %<>% combine_augmented_sets(augmented_set_tibs[i] %>% pluck(1))
+    }
+  }
+  
+  return(aug_query_tib_acc)
+}
+
+
+make_queries_for_group(test_group_a)
+test_query_b <- make_queries_for_group(test_group_b)
+test_query_c <- make_queries_for_group(test_group_c)
+```
+
+## Make full explor data structure
+
 ```{r def-group-to-explor}
 group_to_explor <- function(group) {
   return(group %>% add_column(eric = NA, proquest = NA))
 }
-```
 
+
+explor_a <- group_to_explor(make_queries_for_group(test_group_a))
+explor_b <- group_to_explor(make_queries_for_group(test_group_b))
+explor_c <- group_to_explor(make_queries_for_group(test_group_c))
+```
 
 ```{r get-eric-view-from-group}
 
@@ -236,4 +386,3 @@ get_eric_values <- function(explor) {
   
 }
 ```
-
