@@ -18,6 +18,7 @@ library(ggplot2)
 library(knitr)
 library(shiny)
 library(miniUI)
+library(magrittr)
 ```
 
 We pull in our eric functions from eric_interface.Rmd
@@ -42,56 +43,30 @@ is interpreted as
 
 Just a button that executes a hard coded ERIC search query, which is then displayed below
 
-```{r echo=FALSE}
 
+## UI Helper functions
+```{r echo=FALSE}
 plot_size <- 160
 
-
-format_terms_input_to_search <- function(search_terms) {
-  # TODO: Remove leading spaces from split inputs (More info below)
-
-  # We split the string on new lines then pass the array of split strings to mapply which splits each line on commas
-  split_input <-
-    mapply(strsplit,
-           strsplit(search_terms, "\n"),
-           MoreArgs = list(split = ","))
-
-  # We then combine the split strings with ORs on the same line and each line separated with ANDs
-  # When we combine with ORs it produces a double space. This is because we're splitting on comma without the following space.
-  # This could be changed if we want to disallow commas without spaces after or we could trim the spaces after.
-  return(paste("terms: ", paste(
-    mapply(paste, split_input, MoreArgs = list(collapse = " or ")), collapse = " and "
-  )))
+get_input_terms <- function(input, number_input_boxes) {
+  terms_list <- list()
+  
+  sapply(1:number_input_boxes, function(x) {
+    terms_list[[length(terms_list) + 1]] <<- input[[paste0("terms", x)]]
+  })
+  
+  return(terms_list)
 }
-
-# search_terms is the string input from the terms_input textArea
-format_terms_input_to_list <- function(search_terms) {
-  # split on newlines to search term groups
-  term_groups <- t(stringr::str_split(search_terms, "\n", simplify = TRUE))
-
-  # split term groups on comma, needs whitespace trimmed from terms
-  terms_list <- mapply(function(x) {
-    stringr::str_split(x, ",")
-  }, term_groups)
-
-  return(rapply(terms_list, trimws, how = "replace"))
-}
-
-format_product_into_string <- function(product) {
-    # We need to split on the same value as what is used in format_powerset
-    mapply(function(x) { strsplit(x, "```") }, product)
-}
-
-product_is_empty <- function(product) {
-  # First we create a list of booleans with each element representing if that index is not an empty string.
-  # Then check if any are true
-  return(!any(mapply(function(x) { return(x != "") }, product) == TRUE))
-}
-
-product_contains_empty <- function(product) {
-  # First we create a list of booleans with each element representing if that index is not an empty string.
-  # Then check if any are false
-  return(any(mapply(function(x) { return(x != "") }, product) == FALSE))
+add_term_set <- function(number_input_boxes, value = "") {
+    input_box <- textInput(paste0("terms", number_input_boxes + 1), "", value = value)
+    
+    insertUI(
+      selector = paste0("#terms", number_input_boxes),
+      where = "afterEnd",
+      ui = input_box
+    )
+    
+    return(number_input_boxes + 1)
 }
 ```
 
@@ -99,29 +74,9 @@ product_contains_empty <- function(product) {
 ## Input Panel
 ```{r echo=FALSE}
 
-empty_space <- "--"
+empty_space_string <- "--"
 
 terms <- list()
-
-# Helper Functions
-split_terms_string <- function(str) {
-    cartesian_product_of_terms <- str %>%
-    format_terms_input_to_list %>%
-    term_powerset %>%
-    format_powerset %>%
-    purrr::cross()
-  
-  cartesian_product_of_terms <- cartesian_product_of_terms[!mapply(product_is_empty, cartesian_product_of_terms)]
-
-  contains_empty <- 
-    cartesian_product_of_terms %>% 
-    map(product_contains_empty)
-  formatted_products <- cartesian_product_of_terms %>% 
-    map(function(x) { return(x[x != ""]) }) %>%
-    map(format_product_into_string)
-  
-  return(formatted_products)
-}
 
 ##   formatted_products <- cartesian_product_of_terms %>% 
 ##    map(function(x) { return(x[x != ""]) }) %>%
@@ -157,31 +112,6 @@ search_eric_from_products <- function(formatted_products, options) {
   names(num_found) <- readable_terms
   
   return(num_found)
-}
-
-find_data_by_row_col <- function(row, col, numbers) {
-  
-  if (row == empty_space && col == empty_space) {
-    return(NaN)
-  }
-    
-  if (!(paste(row, "and", col) %in% names(numbers))) {
-    row <- paste0(row,col)
-    col <- substr(row,0,nchar(row) - nchar(col))
-    row <- substr(row,nchar(col) + 1, nchar(row))
-  }
-      
-  if (row == empty_space) {
-    find_string <- col
-  }
-  else if (col == empty_space) {
-    find_string <- row
-  }
-  else {
-    find_string <- paste(row, "and", col)
-  }
-  
-  return(numbers[find_string])
 }
 
 create_compare_graph <- function(first_set, second_set) {
@@ -295,7 +225,8 @@ create_ui_gadget <- function() {
         # Input for terms and options
       fillCol(
       wellPanel(
-        textAreaInput("terms", "Terms", value = "FAA, Part 147\ndistance learning, online education"),
+        textInput("terms1", "Term Set", value = "FAA, Part 147"),
+        actionButton("add_term_set", "Add Term Set", class = "btn-success"),
         wellPanel(
           tags$h4("Options"),
           checkboxInput("peer", "Peer Reviewed", value = FALSE),
@@ -316,12 +247,28 @@ create_ui_gadget <- function() {
       ))))
   
   server <- function(input, output, session) {
+    
     output$summary_graph <- renderPlot({
       plot(mtcars$wt, mtcars$mpg)
     })
     
     output$comparison_graph <- renderPlot({
       plot(mtcars$wt, mtcars$mpg)
+    })
+    
+    number_input_boxes <- 1
+    
+    number_input_boxes <- add_term_set(number_input_boxes, value = "Pandemic, Covid-19")
+    
+    observeEvent(input$add_term_set, {
+    
+      number_input_boxes <<- add_term_set(number_input_boxes)
+    
+    })
+    
+    observeEvent(input$search, {
+      print(number_input_boxes)
+      print(get_input_terms(input, number_input_boxes))
     })
     
   }
