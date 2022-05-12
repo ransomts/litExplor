@@ -229,7 +229,7 @@ test_explor_c <- group_to_explor(make_queries_for_group(test_group_c))
 # ERIC stuff
 
 ```{r get-eric-view-from-group}
-create_eric_url <- function(search_terms, start = 0, rows = 2000,
+create_eric_url <- function(search_terms, start = 0, rows = 0,
                             fields = list(list("*"), list("peerreviewed", "'T'"))) {
 
   # unlikely to change, we only care about ERIC at the moment
@@ -277,20 +277,23 @@ if (file.exists("cache/test_eric_explor_a.Rds")) {
   "test_eric_explor_a" <- read_rds("cache/test_eric_explor_a.Rds")
 } else {
   test_eric_explor_a <- explor_a %>% mutate(eric = get_eric_count(query))
+  test_eric_explor_a %<>% unnest(eric)
   write_rds(test_eric_explor_a, "cache/test_eric_explor_a.Rds")
 }
 
 if (file.exists("cache/test_eric_explor_b.Rds")) {
   "test_eric_explor_b" <- read_rds("cache/test_eric_explor_b.Rds")
 } else {
-  test_eric_explor_b <- explor_a %>% mutate(eric = get_eric_count(query))
+  test_eric_explor_b <- explor_b %>% mutate(eric = get_eric_count(query))
+  test_eric_explor_b %<>% unnest(eric)
   write_rds(test_eric_explor_b, "cache/test_eric_explor_b.Rds")
 }
 
 if (file.exists("cache/test_eric_explor_c.Rds")) {
   "test_eric_explor_c" <- read_rds("cache/test_eric_explor_c.Rds")
 } else {
-  test_eric_explor_c <- explor_a %>% mutate(eric = get_eric_count(query))
+  test_eric_explor_c <- explor_c %>% mutate(eric = get_eric_count(query))
+  test_eric_explor_c %<>% unnest(eric)
   write_rds(test_eric_explor_c, "cache/test_eric_explor_c.Rds")
 }
 ```
