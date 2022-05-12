@@ -57,8 +57,8 @@ get_input_terms <- function(input, number_input_boxes) {
   
   return(terms_list)
 }
-add_term_set <- function(number_input_boxes) {
-    input_box <- textInput(paste0("terms", number_input_boxes + 1), "")
+add_term_set <- function(number_input_boxes, value = "") {
+    input_box <- textInput(paste0("terms", number_input_boxes + 1), "", value = value)
     
     insertUI(
       selector = paste0("#terms", number_input_boxes),
@@ -226,7 +226,6 @@ create_ui_gadget <- function() {
       fillCol(
       wellPanel(
         textInput("terms1", "Term Set", value = "FAA, Part 147"),
-        textInput("terms2", "", value = "Pandemic, Covid-19"),
         actionButton("add_term_set", "Add Term Set", class = "btn-success"),
         wellPanel(
           tags$h4("Options"),
@@ -248,6 +247,7 @@ create_ui_gadget <- function() {
       ))))
   
   server <- function(input, output, session) {
+    
     output$summary_graph <- renderPlot({
       plot(mtcars$wt, mtcars$mpg)
     })
@@ -256,7 +256,9 @@ create_ui_gadget <- function() {
       plot(mtcars$wt, mtcars$mpg)
     })
     
-    number_input_boxes <- 2
+    number_input_boxes <- 1
+    
+    number_input_boxes <- add_term_set(number_input_boxes, value = "Pandemic, Covid-19")
     
     observeEvent(input$add_term_set, {
     
