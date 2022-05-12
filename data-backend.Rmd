@@ -16,6 +16,7 @@ library(magrittr)
 library(curl)
 library(rjson)
 ```
+
 # Convienience Functions
 
 ```{r}
@@ -32,15 +33,15 @@ fully_unnest_tibble <- function(tib) {
 # Data structure
 
 ```{r define-test-groups}
-search_terms <- list(list("community college", "higher education", "postsecondary education"),
-                     list("pandemic", "COVID-19"),
-                     list("online courses", "online learning",
-                        "educational technology", "distance education", "electronic learning"),
-                     list("hands on", "lab"),
-                     list("FAA", "part 147"))
-
-test_search_terms <- list(list("community college", "higher education"),
-                         list("online learning", "distance education"))
+# search_terms <- list(list("community college", "higher education", "postsecondary education"),
+#                      list("pandemic", "COVID-19"),
+#                      list("online courses", "online learning",
+#                         "educational technology", "distance education", "electronic learning"),
+#                      list("hands on", "lab"),
+#                      list("FAA", "part 147"))
+# 
+# test_search_terms <- list(list("community college", "higher education"),
+#                          list("online learning", "distance education"))
 ```
 
 ## Build term sets
@@ -88,16 +89,12 @@ set_to_group <- function(set, ...){
   }
   
   inital_set_names <- set %>% generate_name_from_set
-  #tib %<>% nest(!!inital_set_names := names(set))
   tib %<>% nest("{inital_set_names}" := names(set))
 
   for (extra_set in list(...)) {
     extra_set_names <- extra_set %>% generate_name_from_set
     tib %<>% nest("{extra_set_names}" := names(extra_set))
   }
-
-  # TODO add meta data to group tib
-  #tib %<>% map(format_group_to_query)
 
   return(tib)
 }
@@ -123,11 +120,8 @@ make_queries_for_group <- function(group) {
 
   combine_augmented_sets <- function(set_a, set_b) {
 
-    combined_acc <- bind_cols(set_a %>%
-                                slice(0) %>%
-                                select(-query),
-                              set_b %>%
-                                slice(0))
+    combined_acc <- bind_cols(set_a %>% slice(0) %>% select(-query),
+                              set_b %>% slice(0))
     
     for (a_slice_index in 1:nrow(set_a)) {
       a_slice <- set_a %>% slice(a_slice_index)
@@ -142,14 +136,16 @@ make_queries_for_group <- function(group) {
                                 select(b_slice, query), sep = " AND ") 
         
         if (a_query == "" || b_query == "") {
-          combined_query <- paste0(select(a_slice, query), select(b_slice, query))
+          combined_query <- paste0(select(a_slice, query),
+                                   select(b_slice, query))
         }
         
         a_terms <- a_slice %>% select(-query)
         b_terms <- b_slice %>% select(-query)
         
         
-        combined_acc %<>% add_row(bind_cols(a_terms, b_terms, 
+        combined_acc %<>% add_row(bind_cols(a_terms,
+                                            b_terms,
                                             query = combined_query))
       }
     }
@@ -271,7 +267,7 @@ test_eric_count <- get_eric_count("A AND B")
 
 ```{r}
 
-user_input_explor <- parsed_user_input %>% set_to_group %>% make_queries_for_group %>% group_to_explor
+#user_input_explor <- parsed_user_input %>% set_to_group %>% make_queries_for_group %>% group_to_explor
 
 if (file.exists("cache/test_eric_explor_a.Rds")) {
   "test_eric_explor_a" <- read_rds("cache/test_eric_explor_a.Rds")

@@ -181,6 +181,26 @@ fill_compare_matrix <- function(matrix, numbers) {
   
   return(matrix)
 }
+
+create_heatmap <- function(explor, setA, setB) {
+  #browser()
+  
+  set_a_syms <- map(setA, sym)
+  set_b_syms <- map(setB, sym)
+  
+  print(explor)
+  
+  heat <- explor
+  heat %<>% summarize(set_a = paste(!!!set_a_syms), set_b = paste(!!!set_b_syms), eric)
+  print(heat)
+  heat_plot  <- heat %>% ggplot(aes(set_a, set_b, fill = eric)) + geom_tile()
+  
+  return(ggplotly(heat_plot))  
+  }
+
+create_heatmap(explor = test_eric_explor_b, 
+               setA = c("E", "F", "G"),
+               setB = c("C", "D"))
 ```
 
 ```{r eval=FALSE}
