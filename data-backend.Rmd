@@ -115,9 +115,6 @@ expan_grid <- function(tib, group) {
     }
   }
   
-  print(tib_acc)
-  print(group_acc)
-  
   return(tibble(tib_acc, group_acc))
 }
 
@@ -159,7 +156,7 @@ format_group_to_query <- function(group) {
   
   if (length(query_acc) > 1) {
     for (i in 2:length(query_acc)) {
-      enframed_acc %<>% expand_grid(query_acc[[i]]) %>% unnest
+      enframed_acc %<>% expan_grid(query_acc[[i]]) %>% unnest
     }
   }
   
@@ -189,8 +186,46 @@ make_query <- function(...) {
 
 format_group_to_query(test_group_a)
 test_query_b <- format_group_to_query(test_group_b)
+test_group_b %>% fully_unnest_tibble %>% add_column(test_query_b[!test_query_b %in% c("")]) %>% View
 test_query_against_group(test_query_b, test_group_b)
 test_query_c <- format_group_to_query(test_group_c)
+
+create_eric_url <- function(search_terms, start = 0, rows = 2000,
+                            fields = list(list("*"), list("peerreviewed", "'T'"))) {
+
+  # unlikely to change, we only care about ERIC at the moment
+  eric_base_url <- "https://api.ies.ed.gov/eric/"
+  # we've selected json over xml for parsing and efficiency purposes
+  format <- "json"
+  
+  # two one liners to form our search term logical expression and the field modification encoding
+  formatted_terms <- paste(mapply(function(x) {paste(unlist(x), collapse = " OR ")}, search_terms), collapse = " AND ")
+  formatted_fields <- paste(mapply(function(x) {paste(unlist(x), collapse = ":")}, fields), collapse = " ")
+  
+  unencoded_url <- paste(eric_base_url, 
+                           "?search=", formatted_terms, 
+                           "&format=", format, 
+                           "&start=", start,
+                           "&rows=", rows, 
+                           "&fields=", formatted_fields, 
+                           sep = "")
+  
+  return(URLencode(unencoded_url)) # urltools::url_encode broke api compatibility, using utils::URLencode instead
+}
+
+library(curl)
+library(rjson)
+
+get_eric_count <- function(str) {
+  eric_url <- create_eric_url(str)
+
+  # variable left out for future caching opportunity
+  req <- curl_fetch_memory(eric_url)
+  json_resp <- fromJSON(rawToChar(req$content))
+  return(json_resp$response$numFound)
+}
+
+test_count <- get_eric_count("A AND B")
 
 get_eric_counts <- function(group) {
   
