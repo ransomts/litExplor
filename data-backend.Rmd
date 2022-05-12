@@ -13,6 +13,8 @@ runtime: shiny
 ```{r}
 library(tidyverse)
 library(magrittr)
+library(curl)
+library(rjson)
 ```
 # Convienience Functions
 
@@ -363,8 +365,6 @@ create_eric_url <- function(search_terms, start = 0, rows = 2000,
   return(URLencode(unencoded_url)) # urltools::url_encode broke api compatibility, using utils::URLencode instead
 }
 
-library(curl)
-library(rjson)
 
 get_eric_count <- function(str) {
   eric_url <- create_eric_url(str)
@@ -377,12 +377,4 @@ get_eric_count <- function(str) {
 
 test_count <- get_eric_count("A AND B")
 
-get_eric_counts <- function(group) {
-  
-}
-
-
-get_eric_values <- function(explor) {
-  
-}
 ```
