@@ -47,27 +47,6 @@ Just a button that executes a hard coded ERIC search query, which is then displa
 ## UI Helper functions
 ```{r echo=FALSE}
 plot_size <- 160
-
-get_input_terms <- function(input, number_input_boxes) {
-  terms_list <- list()
-  
-  sapply(1:number_input_boxes, function(x) {
-    terms_list[[length(terms_list) + 1]] <<- input[[paste0("terms", x)]]
-  })
-  
-  return(terms_list)
-}
-add_term_set <- function(number_input_boxes, value = "") {
-    input_box <- textInput(paste0("terms", number_input_boxes + 1), "", value = value)
-    
-    insertUI(
-      selector = paste0("#terms", number_input_boxes),
-      where = "afterEnd",
-      ui = input_box
-    )
-    
-    return(number_input_boxes + 1)
-}
 ```
 
 
@@ -136,38 +115,28 @@ create_compare_graph <- function(first_set, second_set) {
   return(renderTable(compare_matrix, align = "l", rownames = TRUE, bordered = TRUE, digits = 0, na = ""))
 }
 
-create_summary_graph <- function(set) {
-  formatted_set <- mapply(function(x) {
-          paste(unlist(x), collapse = " or ")}, format_product_into_string(set))
-
-  formatted_set <- formatted_set[-1]
+create_summary_graph <- function(explor, set_str) {
   
-  summary_list <- vector(length = length(formatted_set))
+  get_queries_from_explor <- function(explor, set, database) {
+    excluded_names <- names(explor)[!(names(explor) %in% c(names(set), "query", "eric", "proquest"))]
+    
+    for (name in excluded_names) {
+      explor <- filter(explor, eval(sym(name)) == 0)
+    }
+    
+    return(select(explor, query, !!database))
+  }
   
-  names(summary_list) <- formatted_set
+  set <- make_set(set_str)
   
-  summary_list <- fill_summary_list(summary_list, num_found_for_terms)
+  summary_tibble <- get_queries_from_explor(explor, set, "eric")
   
-  summary_df <- data.frame(terms = formatted_set, found = summary_list)
-  
-  rownames(summary_df) <- NULL
-  
-  theme_set(theme_classic())
-  
-  gplot <- ggplot(data = summary_df, aes(x = terms, y = found)) +
+  gplot <- ggplot(data = summary_tibble, aes(x = query, y = eric)) +
     geom_bar(stat = "identity")
   
   gplot <- gplot + scale_y_log10(n.breaks = 10, labels = scales::label_number())
   
-  return(renderPlot(gplot + theme(axis.text.x = element_text(size = 10, angle = -90, hjust = 0)), height = 600, width = 400))
-}
-
-fill_summary_list <- function(list, numbers) {
-  mapply(function(name) {
-    list[name] <<- find_data_by_row_col(name, empty_space, numbers)
-  }, names(list))
-
-  return(list)
+  return(gplot + theme(axis.text.x = element_text(size = 10, angle = -90, hjust = 0)))
 }
 
 fill_compare_matrix <- function(matrix, numbers) {
@@ -256,25 +225,40 @@ create_ui_gadget <- function() {
         ),
         actionButton("search", "Search", class = "btn-success"),
         br(),
-        ))), miniTabPanel("Summary", mainPanel(
+        ))), miniTabPanel("Summary",
+      fillCol(
           wellPanel(
           plotOutput("summary_graph")
-          , align="center")
-      )), miniTabPanel("Comparison", mainPanel(
+          )
+      )), miniTabPanel("Comparison",
         wellPanel(
-          plotOutput("comparison_graph")
+          uiOutput("comparison_graph")
           , align="center")
-      ))))
+      )))
   
   server <- function(input, output, session) {
     
-    output$summary_graph <- renderPlot({
-      plot(mtcars$wt, mtcars$mpg)
-    })
-    
-    output$comparison_graph <- renderPlot({
-      plot(mtcars$wt, mtcars$mpg)
-    })
+    get_input_terms <- function(input, number_input_boxes) {
+      terms_list <- list()
+      
+      sapply(1:number_input_boxes, function(x) {
+        terms_list[[length(terms_list) + 1]] <<- input[[paste0("terms", x)]]
+      })
+      
+      return(terms_list)
+    }
+    add_term_set <- function(number_input_boxes, value = "") {
+        input_box <- textInput(paste0("terms", number_input_boxes + 1), "", value = value)
+        
+        insertUI(
+          selector = paste0("#terms", number_input_boxes),
+          where = "afterEnd",
+          ui = input_box
+        )
+        
+        return(number_input_boxes + 1)
+    }
+
     
     number_input_boxes <- 1
     
@@ -287,8 +271,14 @@ create_ui_gadget <- function() {
     })
     
     observeEvent(input$search, {
-      print(number_input_boxes)
-      print(get_input_terms(input, number_input_boxes))
+      # Test search 
+      explor <- test_eric_explor_b
+      
+      output$summary_graph <- renderPlot(create_summary_graph(explor, "C OR D"))
+      
+      # output$comparison_graph <- renderPlot({
+      #   create_compare_graph(explor)
+      # })
     })
     
   }
