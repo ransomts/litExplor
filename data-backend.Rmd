@@ -26,24 +26,6 @@ fully_unnest_tibble <- function(tib) {
   }
   return(unnested_tib)
 }
-
-expan_grid <- function(tib, group) {
-  tib_acc <- c()
-  group_acc <- c()
-  for (element in group) {
-    for (col in tib) {
-      for (val in col) {
-        tib_acc %<>% append(val)
-        group_acc %<>% append(element)
-      }
-    }
-  }
-  
-  print(tib_acc)
-  print(group_acc)
-  
-  return(tibble(tib_acc, group_acc))
-}
 ```
 
 
@@ -239,109 +221,14 @@ group_to_explor <- function(group) {
 }
 
 
-explor_a <- group_to_explor(make_queries_for_group(test_group_a))
-explor_b <- group_to_explor(make_queries_for_group(test_group_b))
-explor_c <- group_to_explor(make_queries_for_group(test_group_c))
+test_explor_a <- group_to_explor(make_queries_for_group(test_group_a))
+test_explor_b <- group_to_explor(make_queries_for_group(test_group_b))
+test_explor_c <- group_to_explor(make_queries_for_group(test_group_c))
 ```
 
+# ERIC stuff
+
 ```{r get-eric-view-from-group}
-
-fully_unnest_tibble <- function(tib) {
-  unnested_tib <- tib 
-  for (col_name in tib %>% names) {
-    unnested_tib %<>% unnest(cols = c(!!col_name))
-  }
-  return(unnested_tib)
-}
-
-
-expan_grid <- function(tib, group) {
-  tib_acc <- c()
-  group_acc <- c()
-  for (element in group) {
-    for (col in tib) {
-      for (val in col) {
-        tib_acc %<>% append(val)
-        group_acc %<>% append(element)
-      }
-    }
-  }
-  
-  return(tibble(tib_acc, group_acc))
-}
-
-format_group_to_query <- function(group) {
-
-  binary_recode <- function(data, term) {
-    if (data == 0) {
-      return("")
-    }
-    return(term)
-  }
-  binary_recode <- Vectorize(binary_recode)
-
-  # TODO possible spoc for optimization, pre filter group to only compute needed queries
-
-  set_names <- group %>% names
-  query_acc <- c()
-  for (set_name in set_names) {
-    #browser()
-
-    terms <- set_name %>% str_split("_") %>% pluck(1)
-    group_tmp <- group %>% select(set_name) %>% unnest(c(set_name))
-    
-    for (term in terms) {
-      
-      group_tmp %<>% 
-        mutate(!!term := binary_recode(!!sym(term), term)) 
-    }
-    
-    query_acc %<>% append(list(group_tmp %>%
-                          reduce(paste) %>%
-                          str_squish() %>%
-                          str_replace_all(pattern = " ", replacement = " OR ")))
-  }
-
-  a <- enframe(query_acc) %>% unnest(value)
-
-  enframed_acc <- expand_grid(query_acc[[1]]) %>% unnest
-  
-  if (length(query_acc) > 1) {
-    for (i in 2:length(query_acc)) {
-      enframed_acc %<>% expan_grid(query_acc[[i]]) %>% unnest
-    }
-  }
-  
-  return(enframed_acc %>% 
-           reduce(paste) %>% 
-           str_squish() %>% 
-           str_replace_all(pattern = "(?<!OR) (?!OR)", replacement = " AND ") %>% 
-           unique)
-}
-
-make_query <- function(...) {
-  tmp_names <- ...names()
-  new_names <- c()
-  for (i in 1:...length()) {
-    if (...elt(i) == 1) {
-      new_names %<>% append(tmp_names[i])
-    }
-  }
-  
-  if (length(new_names) > 1) {
-    new_names %<>% paste(collapse = " OR ")
-  } else if (length(new_names) == 0) {
-    new_names <- ""
-  }
-  return(new_names)
-}
-
-format_group_to_query(test_group_a)
-test_query_b <- format_group_to_query(test_group_b)
-test_group_b %>% fully_unnest_tibble %>% add_column(test_query_b[!test_query_b %in% c("")]) %>% View
-test_query_against_group(test_query_b, test_group_b)
-test_query_c <- format_group_to_query(test_group_c)
-
 create_eric_url <- function(search_terms, start = 0, rows = 2000,
                             fields = list(list("*"), list("peerreviewed", "'T'"))) {
 
@@ -368,13 +255,43 @@ create_eric_url <- function(search_terms, start = 0, rows = 2000,
 
 get_eric_count <- function(str) {
   eric_url <- create_eric_url(str)
-
+  
   # variable left out for future caching opportunity
   req <- curl_fetch_memory(eric_url)
   json_resp <- fromJSON(rawToChar(req$content))
   return(json_resp$response$numFound)
 }
+get_eric_count <- Vectorize(get_eric_count)
 
-test_count <- get_eric_count("A AND B")
 
+test_eric_count <- get_eric_count("A AND B")
 ```
+
+## Make ERIC explor data
+
+```{r}
+
+user_input_explor <- parsed_user_input %>% set_to_group %>% make_queries_for_group %>% group_to_explor
+
+if (file.exists("cache/test_eric_explor_a.Rds")) {
+  "test_eric_explor_a" <- read_rds("cache/test_eric_explor_a.Rds")
+} else {
+  test_eric_explor_a <- explor_a %>% mutate(eric = get_eric_count(query))
+  write_rds(test_eric_explor_a, "cache/test_eric_explor_a.Rds")
+}
+
+if (file.exists("cache/test_eric_explor_b.Rds")) {
+  "test_eric_explor_b" <- read_rds("cache/test_eric_explor_b.Rds")
+} else {
+  test_eric_explor_b <- explor_a %>% mutate(eric = get_eric_count(query))
+  write_rds(test_eric_explor_b, "cache/test_eric_explor_b.Rds")
+}
+
+if (file.exists("cache/test_eric_explor_c.Rds")) {
+  "test_eric_explor_c" <- read_rds("cache/test_eric_explor_c.Rds")
+} else {
+  test_eric_explor_c <- explor_a %>% mutate(eric = get_eric_count(query))
+  write_rds(test_eric_explor_c, "cache/test_eric_explor_c.Rds")
+}
+```
+
