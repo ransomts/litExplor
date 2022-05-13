@@ -19,6 +19,7 @@ library(knitr)
 library(shiny)
 library(miniUI)
 library(magrittr)
+library(plotly)
 ```
 
 We pull in our eric functions from eric_interface.Rmd
@@ -156,7 +157,20 @@ fill_compare_matrix <- function(matrix, numbers) {
 }
 
 create_heatmap <- function(explor, setA, setB) {
-  # browser()
+  translate_binary_to_label <- function(binary, sym) {
+    sym_holder <- sym
+    present_vars <- c()
+    binary_vars <- str_split(binary, pattern = " ", simplify = TRUE)
+
+    for (i in 1:length(binary_vars)) {
+      if (binary_vars[i] == "1") {
+        present_vars %<>% append(sym[i])
+      }
+    }
+
+    return(paste0(present_vars, collapse = " OR "))
+  }
+  translate_binary_to_label <- Vectorize(translate_binary_to_label)
 
   set_a_syms <- map(setA, sym)
   set_b_syms <- map(setB, sym)
@@ -166,8 +180,17 @@ create_heatmap <- function(explor, setA, setB) {
   heat <- explor
   heat %<>% summarize(set_a = paste(!!!set_a_syms), set_b = paste(!!!set_b_syms), eric)
   print(heat)
+  heat %<>% mutate(
+    set_a = translate_binary_to_label(set_a, list(setA)),
+    set_b = translate_binary_to_label(set_b, list(setB))
+  )
   heat_plot <- heat %>% ggplot(aes(set_a, set_b, fill = eric)) +
-    geom_tile()
+    geom_tile() +
+    labs(x = NULL, y = NULL) +
+    theme(
+      axis.text.x = element_text(size = 15, vjust = 0.5, angle = 45),
+      axis.text.y = element_text(size = 15)
+    )
 
   return(ggplotly(heat_plot))
 }
@@ -301,6 +324,7 @@ create_ui_gadget <- function() {
   runGadget(ui, server)
 }
 
+create_ui_gadget()
 
 # shinyApp(ui, server, options = list(height = 700))
 ```

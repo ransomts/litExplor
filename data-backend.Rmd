@@ -59,7 +59,7 @@ make_set <- function(input_terms) {
 }
 
 test_set_a <- make_set("A OR B")
-View(test_set_a)
+# View(test_set_a)
 test_set_b <- make_set("C OR D")
 test_set_c <- make_set("E OR F OR G")
 test_set_d <- make_set("H OR I")
@@ -102,9 +102,9 @@ set_to_group <- function(set, ...) {
 
 
 test_group_a <- set_to_group(test_set_a)
-test_group_a %>% View()
+# test_group_a %>% View()
 test_group_b <- set_to_group(test_set_c, test_set_b)
-test_group_b %>% View()
+# test_group_b %>% View()
 test_group_c <- set_to_group(test_set_d, test_set_e, test_set_f)
 ```
 
