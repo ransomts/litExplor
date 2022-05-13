@@ -57,19 +57,22 @@ empty_space_string <- "--"
 
 terms <- list()
 
-##   formatted_products <- cartesian_product_of_terms %>% 
+##   formatted_products <- cartesian_product_of_terms %>%
 ##    map(function(x) { return(x[x != ""]) }) %>%
 ##    map(format_product_into_string)
 
 search_eric_from_products <- function(formatted_products, options) {
-  
   eric_urls <- formatted_products %>%
-    map(function(x) { create_eric_url(x, rows = 20, fields = list(list("peerreviewed", "'T'"))) })
- 
+    map(function(x) {
+      create_eric_url(x, rows = 20, fields = list(list("peerreviewed", "'T'")))
+    })
+
   readable_terms <- mapply(function(product) {
-      paste(mapply(function(x) { 
-          paste(unlist(x), collapse = " or ")}, product), collapse = " and ") }, formatted_products)
-  
+    paste(mapply(function(x) {
+      paste(unlist(x), collapse = " or ")
+    }, product), collapse = " and ")
+  }, formatted_products)
+
   eric_responses <- list()
 
   withProgress(message = "Searching ERIC\n", value = 0, {
@@ -83,24 +86,28 @@ search_eric_from_products <- function(formatted_products, options) {
       incProgress(1 / n, detail = paste("Searching URL", eric_urls[[i]]))
     }
   })
-  
+
   names(eric_responses) <- readable_terms
-  
-  num_found <- mapply(function(x) { return(x$response$numFound) }, eric_responses)
+
+  num_found <- mapply(function(x) {
+    return(x$response$numFound)
+  }, eric_responses)
 
   names(num_found) <- readable_terms
-  
+
   return(num_found)
 }
 
 create_compare_graph <- function(first_set, second_set) {
   first_formatted <- mapply(function(x) {
-          paste(unlist(x), collapse = " or ")}, format_product_into_string(first_set))
+    paste(unlist(x), collapse = " or ")
+  }, format_product_into_string(first_set))
 
   first_formatted[[1]] <- empty_space
 
   second_formatted <- mapply(function(x) {
-          paste(unlist(x), collapse = " or ")}, format_product_into_string(second_set))
+    paste(unlist(x), collapse = " or ")
+  }, format_product_into_string(second_set))
 
   second_formatted[[1]] <- empty_space
 
@@ -109,83 +116,83 @@ create_compare_graph <- function(first_set, second_set) {
   rownames(compare_matrix) <- first_formatted
 
   colnames(compare_matrix) <- second_formatted
-  
+
   compare_matrix <- fill_compare_matrix(compare_matrix, num_found_for_terms)
-  
+
   return(renderTable(compare_matrix, align = "l", rownames = TRUE, bordered = TRUE, digits = 0, na = ""))
 }
 
 create_summary_graph <- function(explor, set_str) {
-  
   get_queries_from_explor <- function(explor, set, database) {
     excluded_names <- names(explor)[!(names(explor) %in% c(names(set), "query", "eric", "proquest"))]
-    
+
     for (name in excluded_names) {
       explor <- filter(explor, eval(sym(name)) == 0)
     }
-    
+
     return(select(explor, query, !!database))
   }
-  
+
   set <- make_set(set_str)
-  
+
   summary_tibble <- get_queries_from_explor(explor, set, "eric")
-  
+
   gplot <- ggplot(data = summary_tibble, aes(x = query, y = eric)) +
     geom_bar(stat = "identity")
-  
+
   gplot <- gplot + scale_y_log10(n.breaks = 10, labels = scales::label_number())
-  
+
   return(gplot + theme(axis.text.x = element_text(size = 10, angle = -90, hjust = 0)))
 }
 
 fill_compare_matrix <- function(matrix, numbers) {
   mapply(function(rowname) {
     mapply(function(colname) {
-    
       matrix[rowname, colname] <<- find_data_by_row_col(rowname, colname, numbers)
-      
     }, colnames(matrix))
   }, rownames(matrix))
-  
+
   return(matrix)
 }
 
 create_heatmap <- function(explor, setA, setB) {
-  #browser()
-  
+  # browser()
+
   set_a_syms <- map(setA, sym)
   set_b_syms <- map(setB, sym)
-  
+
   print(explor)
-  
+
   heat <- explor
   heat %<>% summarize(set_a = paste(!!!set_a_syms), set_b = paste(!!!set_b_syms), eric)
   print(heat)
-  heat_plot  <- heat %>% ggplot(aes(set_a, set_b, fill = eric)) + geom_tile()
-  
-  return(ggplotly(heat_plot))  
-  }
+  heat_plot <- heat %>% ggplot(aes(set_a, set_b, fill = eric)) +
+    geom_tile()
 
-create_heatmap(explor = test_eric_explor_b, 
-               setA = c("E", "F", "G"),
-               setB = c("C", "D"))
+  return(ggplotly(heat_plot))
+}
+
+create_heatmap(
+  explor = test_eric_explor_b,
+  setA = c("E", "F", "G"),
+  setB = c("C", "D")
+)
 ```
 
 ```{r eval=FALSE}
-  withProgress(message = "Searching ERIC\n", value = 0, {
-    # Number of times we'll go through the loop
-    n <- length(formatted_products)
+withProgress(message = "Searching ERIC\n", value = 0, {
+  # Number of times we'll go through the loop
+  n <- length(formatted_products)
 
-    for (i in 1:n) {
-      url <- create_eric_url(formatted_products[[i]], rows = 20, fields = options)
-      
-      eric_responses[[i]] <- get_eric_json(url)
+  for (i in 1:n) {
+    url <- create_eric_url(formatted_products[[i]], rows = 20, fields = options)
 
-      # Increment the progress bar, and update the detail text.
-      incProgress(1 / n, detail = url)
-    }
-  })
+    eric_responses[[i]] <- get_eric_json(url)
+
+    # Increment the progress bar, and update the detail text.
+    incProgress(1 / n, detail = url)
+  }
+})
 ```
 
 ```{r echo=FALSE}
@@ -199,90 +206,98 @@ create_ui_gadget <- function() {
             padding-bottom: 10px;
            }")
   }
-  
+
   num_found_for_terms <- list()
 
   compare_count <- 1
 
   summary_count <- 1
-  
+
   # Define UI
   ui <- miniUI::miniPage(
-    miniTabstripPanel(miniTabPanel("Search",
-  
-    # Sidebar layout with input and output definitions
-        # Input for terms and options
+    miniTabstripPanel(miniTabPanel(
+      "Search",
+
+      # Sidebar layout with input and output definitions
+      # Input for terms and options
       fillCol(
-      wellPanel(
-        textInput("terms1", "Term Set", value = "FAA, Part 147"),
-        actionButton("add_term_set", "Add Term Set", class = "btn-success"),
         wellPanel(
-          tags$h4("Options"),
-          checkboxInput("peer", "Peer Reviewed", value = FALSE),
-          radioButtons("database", "Database: ",
-               c("ERIC" = "eric",
-                 "ProQuest" = "proquest"))
-        ),
-        actionButton("search", "Search", class = "btn-success"),
-        br(),
-        ))), miniTabPanel("Summary",
-      fillCol(
+          textInput("terms1", "Term Set", value = "FAA, Part 147"),
+          actionButton("add_term_set", "Add Term Set", class = "btn-success"),
           wellPanel(
-          plotOutput("summary_graph")
-          )
-      )), miniTabPanel("Comparison",
+            tags$h4("Options"),
+            checkboxInput("peer", "Peer Reviewed", value = FALSE),
+            radioButtons(
+              "database", "Database: ",
+              c(
+                "ERIC" = "eric",
+                "ProQuest" = "proquest"
+              )
+            )
+          ),
+          actionButton("search", "Search", class = "btn-success"),
+          br(),
+        )
+      )
+    ), miniTabPanel(
+      "Summary",
+      fillCol(
         wellPanel(
-          uiOutput("comparison_graph")
-          , align="center")
-      )))
-  
+          plotOutput("summary_graph")
+        )
+      )
+    ), miniTabPanel(
+      "Comparison",
+      wellPanel(
+        uiOutput("comparison_graph"),
+        align = "center"
+      )
+    ))
+  )
+
   server <- function(input, output, session) {
-    
     get_input_terms <- function(input, number_input_boxes) {
       terms_list <- list()
-      
+
       sapply(1:number_input_boxes, function(x) {
         terms_list[[length(terms_list) + 1]] <<- input[[paste0("terms", x)]]
       })
-      
+
       return(terms_list)
     }
     add_term_set <- function(number_input_boxes, value = "") {
-        input_box <- textInput(paste0("terms", number_input_boxes + 1), "", value = value)
-        
-        insertUI(
-          selector = paste0("#terms", number_input_boxes),
-          where = "afterEnd",
-          ui = input_box
-        )
-        
-        return(number_input_boxes + 1)
+      input_box <- textInput(paste0("terms", number_input_boxes + 1), "", value = value)
+
+      insertUI(
+        selector = paste0("#terms", number_input_boxes),
+        where = "afterEnd",
+        ui = input_box
+      )
+
+      return(number_input_boxes + 1)
     }
 
-    
+
     number_input_boxes <- 1
-    
+
     number_input_boxes <- add_term_set(number_input_boxes, value = "Pandemic, Covid-19")
-    
+
     observeEvent(input$add_term_set, {
-    
       number_input_boxes <<- add_term_set(number_input_boxes)
-    
     })
-    
+
     observeEvent(input$search, {
-      # Test search 
+      # Test search
       explor <- test_eric_explor_b
-      
+
       output$summary_graph <- renderPlot(create_summary_graph(explor, "C OR D"))
-      
+
       # output$comparison_graph <- renderPlot({
       #   create_compare_graph(explor)
       # })
     })
-    
   }
-  
+
   runGadget(ui, server)
 }
 
