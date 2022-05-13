@@ -45,20 +45,8 @@ is interpreted as
 
 Just a button that executes a hard coded ERIC search query, which is then displayed below
 
-
-## UI Helper functions
-```{r echo=FALSE}
-plot_size <- 160
-```
-
-
 ## Input Panel
 ```{r echo=FALSE}
-
-empty_space_string <- "--"
-
-terms <- list()
-
 translate_binary_to_label <- function(binary, sym) {
   sym_holder <- sym
   present_vars <- c()
@@ -73,25 +61,6 @@ translate_binary_to_label <- function(binary, sym) {
   return(paste0(present_vars, collapse = " OR "))
 }
 translate_binary_to_label <- Vectorize(translate_binary_to_label)
-
-create_summary_graph_alt <- function(explor, set) {
-  set %<>% str_split(" OR ", simplify = TRUE)
-
-  data <- explor %>%
-    summarise(set_a = paste(!!!syms_a), eric) %>%
-    mutate(set_a = translate_binary_to_label(set_a, list(set)))
-
-  plot <- data %>%
-    ggplot(aes(x = set_a, y = eric)) +
-    geom_bar(stat = "identity") +
-    scale_y_log10(
-      n.breaks = 10,
-      labels = scales::label_number()
-    ) +
-    theme(axis.text.x = element_text(size = 10, angle = 45, hjust = 0))
-
-  return(plot)
-}
 
 create_heatmap <- function(explor, setA, setB) {
   setA %<>% str_split(" OR ", simplify = TRUE)
@@ -191,8 +160,6 @@ withProgress(message = "Searching ERIC\n", value = 0, {
 ```
 
 ```{r echo=FALSE}
-
-
 create_ui_gadget <- function() {
   get_css <- function() {
     return("div {
