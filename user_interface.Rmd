@@ -45,8 +45,10 @@ is interpreted as
 
 Just a button that executes a hard coded ERIC search query, which is then displayed below
 
-## Input Panel
-```{r echo=FALSE}
+## Visualizations
+
+### Viz helpers
+```{r viz-helpers, echo=FALSE}
 translate_binary_to_label <- function(binary, sym) {
   sym_holder <- sym
   present_vars <- c()
@@ -61,7 +63,10 @@ translate_binary_to_label <- function(binary, sym) {
   return(paste0(present_vars, collapse = " OR "))
 }
 translate_binary_to_label <- Vectorize(translate_binary_to_label)
+```
 
+### Heatmap
+```{r viz-heatmap, echo=FALSE}
 create_heatmap <- function(explor, setA, setB) {
   setA %<>% str_split(" OR ", simplify = TRUE)
   setB %<>% str_split(" OR ", simplify = TRUE)
@@ -105,7 +110,10 @@ create_heatmap <- function(explor, setA, setB) {
 
   return(heat_plot)
 }
+```
 
+### Single Set Summary
+```{r viz-single-summary, echo=FALSE}
 create_summary <- function(explor, setA) {
   setA %<>% str_split(" OR ", simplify = TRUE)
 
@@ -143,7 +151,8 @@ create_summary <- function(explor, setA) {
 }
 ```
 
-```{r eval=FALSE}
+# UI Nice to haves
+```{r def-progress, eval=FALSE}
 withProgress(message = "Searching ERIC\n", value = 0, {
   # Number of times we'll go through the loop
   n <- length(formatted_products)
@@ -159,7 +168,8 @@ withProgress(message = "Searching ERIC\n", value = 0, {
 })
 ```
 
-```{r echo=FALSE}
+# Shiny Gadget
+```{r gadget, echo=FALSE}
 create_ui_gadget <- function() {
   get_css <- function() {
     return("div {
@@ -259,14 +269,10 @@ create_ui_gadget <- function() {
       output$summary_graph <- renderPlot(create_summary(explor, "C OR D"))
 
       output$comparison_graph <- renderPlot(create_heatmap(explor, setA = "E OR F OR G", setB = "C OR D"))
-
-      # output$comparison_graph <- renderPlot({
-      #   create_compare_graph(explor)
-      # })
     })
   }
 
-  runGadget(ui, server)
+  runGadget(ui, server, viewer = dialogViewer("explor"))
 }
 
 create_ui_gadget()
