@@ -1,0 +1,99 @@
+#+title: litExplor: a systematic literature review tool
+#+author: Tim Ransom
+#+options: toc:nil
+#+STARTUP: hideblocks
+
+* JOSS
+
+#+begin_src yaml
+---
+title: 'litExplor: a systematic literature review tool'
+tags:
+- systematic literature review
+- literacuter review
+- research methodology
+date: "16 May 2022"
+output: pdf_document
+authors:
+- name: Tim Ransom
+  orcid: 0000-0003-0357-5427
+  affiliation: Clemson University
+- name: Moss Gallagher
+  affiliation: 2
+bibliography: paper.bib
+affiliations:
+- name: Clemson University
+  index: 1
+---
+#+end_src
+
+** Summary
+
+Systematic literature reviews require the researcher to decide search terms fairly early in the process. For the PRISMA framework, it is performed in the <insert number of step> step, early in the process. Other frameworks which are based on PRISMA such as JARS or PRISMA-P also require search term selection early in the process. 
+
+The phrasing of this step varies across the frameworks, but data collection and selection is a critical if generic step in any research. 
+
+** Statement of need
+
+** Other
+
+** Citations
+
+** bibliography :noexport:
+
+#+begin_src bibtex :tangle paper.bib
+@ARTICLE{Schulte2011, 
+author={Schulte, Eric and Davison, Dan}, 
+journal={Computing in Science Engineering}, 
+title={Active Documents with Org-Mode}, 
+year=2011, 
+month=jun, 
+volume={13}, 
+number={3}, 
+pages={66 -73}, 
+keywords={Org-mode language;active documents;code intermingling;data intermingling;hierarchical documents;plain-text markup language;prose intermingling;document handling;specification languages;}, 
+doi={10.1109/MCSE.2011.41}, 
+ISSN={1521-9615}
+}
+#+end_src
+
+** Submission notes :noexport:
+
+https://joss.readthedocs.io/en/latest/submitting.html#example-paper-and-bibliography
+
+* Methods/Development
+
+FAVOR has been developed with a target audience of education researchers. The primary challenge of visualizing the data collected from the databases is in maintaining a reasonable cognitive load for the user. 
+
+While researchers experienced in the field that they are producing a systematic literature review in are likely able to differentiate related terms in a literature base, novice researchers might struggle with this task. 
+Specific terms relevant to a topic may have been updated, made more precise, or redefined entirely. 
+Geographic factors have a large impact on the meanings of words as well. For example, in the United Kingdom, a polytechnical institution is an outdated term that is roughly comparable to American community college. 
+FAVOR has an option to filter search results to ERIC supported geographic regions such as England or the United States.
+
+* results/screenshots/walkthrough
+
+** Breakdown of options
+
+* Case studies
+
+We demonstrate a sample workflow of our tool with two case studies. 
+An aviation topic has  possibly less relevant or extraneous terms which are identified for removal. 
+A topic of computing identity is selected to demonstrate identification of possible terms for refinement.
+
+** Online aviation education
+
+** Computing Identity
+
+* discussion
+
+** threats to validity
+
+** future directions
+
+As this work is targeting education researchers, ERIC is currently the only database being utilized. We make use of the official API to comply with resource usage restrictions, but this has a dual effect of opening our tool for other APIs. Interfaces to databases are commonly provided by other databases such as ProQuest, ScienceDirect, and ...
+
+
+* acknowledgements
+We would like to acknowledge the insight provided to this work by Dr. Eliza Gallagher and the faculty of the Clemson University Engineering and Science Education department as we have built and tuned this tool.
+
+* References
