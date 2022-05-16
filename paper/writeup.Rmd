@@ -3,7 +3,8 @@ output:
   stevetemplates::article2:
     citation_package: natbib
     dev: cairo_pdf
-    keep_tex: true
+    keep_tex: false
+    keep_md: false
 biblio-style: apsr
 title: "litExplor: a systematic literature review tool"
 thanks: "Replication files are available on the author's Github account (https://github.com/ransomts/ed_database_explor). **Current version**: `r format(Sys.time(), '%B %d, %Y')`; **Corresponding author**: tsranso@clemson.edu."

@@ -2,7 +2,8 @@
 % Please edit documentation in R/database-communication.R
 \name{create_eric_url}
 \alias{create_eric_url}
-\title{Database Communications}
+\title{create_eric_url
+create_eric_url}
 \usage{
 create_eric_url(
   search_terms,
@@ -12,17 +13,14 @@ create_eric_url(
 )
 }
 \arguments{
-\item{search_terms}{.}
+\item{search_terms}{}
 
-\item{start}{.}
-
-\item{rows}{.}
-
-\item{fields}{.}
+\item{fields}{}
 }
 \value{
 string of html encoded eric query
 }
 \description{
-This file contains functions to communicate with the ERIC and Proquest databases
+create_eric_url
+create_eric_url
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/data-backend.R
 \name{make_set}
 \alias{make_set}
-\title{Data Backend}
+\title{make_set}
 \usage{
 make_set(input_terms)
 }
@@ -13,9 +13,8 @@ make_set(input_terms)
 A tibble with column names from \code{input_terms} representing search terms OR'd together
 #make_set("A OR B")
 #make_set("E OR F OR G")
-#make_set("M OR N OR O OR P")
+#make_set("M OR N OR O OR P")s
 }
 \description{
-This file provides the model for combining search term sets into
-a tibble for visualization.
+make_set
 }

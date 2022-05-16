@@ -1,18 +1,14 @@
-#' Data Backend
-#'
-#' This file provides the model for combining search term sets into
-#' a tibble for visualization.
-#' @importFrom magrittr %>%
-#' @importFrom magrittr %<>%
-#' @importFrom rlang :=
+#  This file provides the model for combining search term sets into
+#  a tibble for visualization.
 
 
+#' make_set
 # TODO figure out if examples are needed for non exported functions
 #' @param input_terms a string in the form "A OR B OR C"
 #' @return A tibble with column names from \code{input_terms} representing search terms OR'd together
 #' #make_set("A OR B")
 #' #make_set("E OR F OR G")
-#' #make_set("M OR N OR O OR P")
+#' #make_set("M OR N OR O OR P")s
 make_set <- function(input_terms) {
   if (input_terms == "") stop("input_terms must not be empty")
 
@@ -35,17 +31,27 @@ make_set <- function(input_terms) {
   return(tib)
 }
 
+#' set_to_group
 #' @param set a set as output from \code{\link{make_set}}
+#'
 #' @param ... additional sets
+#'
 #' @return a group tibble, representing search term sets which are AND'd together
-#' @examples
 #' set_to_group(make_set("A OR B"))
 #' set_to_group(make_set("A OR B"), make_set("C OR D"))
 set_to_group <- function(set, ...) {
+
+  #' generate_name_from_set
+  #' @param set a list of term strings
+  #' @return string with the terms deliminated by an underscore
   generate_name_from_set <- function(set) {
     return(set %>% names() %>% paste0(collapse = "_"))
   }
 
+  #' nth_bit
+  #' @param i an integer
+  #' @param n the index of the bit to retreive
+  #' @return the nth bit of an integer
   nth_bit <- function(i, n) {
     bitwAnd(bitwShiftR(i, n - 1), 1)
   }
@@ -68,11 +74,22 @@ set_to_group <- function(set, ...) {
   return(tib)
 }
 
+#' add_queries_to_group
 #' @param group a group as returned by the \code{\link{set_to_gorup}} function
 #' @return a tibble with binary expansions of terms and English queries of them
 #' #make_queries_for_group(set_to_group(make_set("A OR B")))
 #' #make_queries_for_group(set_to_group(make_set("A OR B"), make_set("C OR D")))
 add_queries_to_group <- function(group) {
+
+  #' combine_augmented_sets
+  #'
+  #' An augmented set is a term set tibble with queries. In order to combine
+  #' them, we need a cartesian product on the term binaries but the queries are
+  #' combined with an " AND " between them.
+  #'
+  #' @param set_a Name of first set to combine
+  #' @param set_b Name of second set to combine
+  #' @return a tibble with the binary expansions of the sets present and queries combined
   combine_augmented_sets <- function(set_a, set_b) {
     combined_acc <- dplyr::bind_cols(
       set_a %>% dplyr::slice(0) %>% dplyr::select(-query),
@@ -114,7 +131,17 @@ add_queries_to_group <- function(group) {
     return(combined_acc)
   }
 
+  #' make_queries_for_set
+  #'
+  #' @param set
+  #'
+  #' @return
   make_queries_for_set <- function(set) {
+
+    #' make_query
+    #'
+    #' @param ... a number of binary variables from the columns of an explor tibble
+    #' @return A string representing the terms present in the provided columns
     make_query <- function(...) {
       tmp_names <- names(list(...))
       new_names <- c()
@@ -160,11 +187,29 @@ add_queries_to_group <- function(group) {
   return(aug_query_tib_acc)
 }
 
+#' group_to_explor
 #' @param group_with_queries a group as created by the add_queries_to_group function
 #' @return a fully expanded explor tibble without paper counts
-#' @examples
 #' group_to_explor(add_queries_to_group(set_to_group(make_set("A OR B"))))
 #' group_to_explor(add_queries_to_group(set_to_group(make_set("A OR B"), make_set("C OR D"))))
 group_to_explor <- function(group_with_queries) {
   return(group_with_queries %>% tibble::add_column(eric = NA, proquest = NA))
 }
+
+#' An example explor tibble
+#'
+#' A dataset containing a fully formed term search set,
+#' English translations, and eric article counts
+#'
+#' @format A tibble with four search terms, queries, eric counts, and proquest counts. NA represents data has not been collected
+#' \describe{
+#'    \item{A}{search term "A"}
+#'    \item{B}{search term "B"}
+#'    \item{C}{search term "C"}
+#'    \item{D}{search term "D"}
+#'    \item{query}{English translation of search query}
+#'    \item{eric}{Number of matching articles in ERIC}
+#'    \item{proquest}{Number of matching articles in Proquest}
+#' }
+"example_explor_b"
+

@@ -110,7 +110,9 @@ litExplor <- function() {
     })
 
     shiny::observeEvent(input$compare_dropdown_b, {
-      output$comparison_graph <- shiny::renderPlot(create_heatmap(explor, setA = input$compare_dropdown_a, setB = input$compare_dropdown_b))
+      output$comparison_graph <- shiny::renderPlot(create_heatmap(explor,
+                                                                  sa = input$compare_dropdown_a,
+                                                                  sb = input$compare_dropdown_b))
     })
 
     shiny::observeEvent(input$search, {

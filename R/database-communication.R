@@ -1,13 +1,12 @@
-#' Database Communications
-#'
-#' This file contains functions to communicate with the ERIC and Proquest databases
-
-
 # TODO fill in param descriptions
-#' @param search_terms .
-#' @param start .
-#' @param rows .
-#' @param fields .
+#' create_eric_url
+#' create_eric_url
+#' @param search_terms
+#'
+#' @param start
+#' @param rows
+#' @param fields
+#'
 #' @return string of html encoded eric query
 create_eric_url <- function(search_terms, start = 0, rows = 0,
                             fields = list(list("*"), list("peerreviewed", "'T'"))) {
@@ -38,12 +37,10 @@ create_eric_url <- function(search_terms, start = 0, rows = 0,
 }
 
 # TODO fill in roxygen
-#' @param str .
+#' get_eric_count
+#' @param str
 #'
 #' @return an integer with the corresponding number of articles eric has for the search
-#'
-#' @examples
-#' # TODO add example
 get_eric_count <- function(str) {
   eric_url <- create_eric_url(str)
 
@@ -55,13 +52,21 @@ get_eric_count <- function(str) {
 get_eric_count <- Vectorize(get_eric_count)
 
 # TODO implement proquest communication
-# TODO document proquest communication
+#' create_proquest_url
+#'
+#' @param str
+#'
+#' @return
 create_proquest_url <- function(str) {
   testthat::skip("Proquest url creation not implemented")
 }
 
 # TODO implement proquest communication
-# TODO document proquest communication
+#' get_proquest_count
+#'
+#' @param str
+#'
+#' @return
 get_proquest_count <- function(str) {
   testthat::skip("Proquest communication not implemented")
 }

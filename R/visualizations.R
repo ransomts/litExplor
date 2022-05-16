@@ -1,4 +1,10 @@
 # TODO roxygen documentation
+#' Title
+#'
+#' @param binary
+#' @param sym
+#'
+#' @return
 translate_binary_to_label <- function(binary, sym) {
   sym_holder <- sym
   present_vars <- c()
@@ -15,18 +21,25 @@ translate_binary_to_label <- function(binary, sym) {
 translate_binary_to_label <- Vectorize(translate_binary_to_label)
 
 # TODO roxygen documentation
-create_heatmap <- function(explor, setA, setB) {
-  setA %<>% stringr::str_split(" OR ", simplify = TRUE)
-  setB %<>% stringr::str_split(" OR ", simplify = TRUE)
+#' Title
+#'
+#' @param explor
+#' @param sa
+#' @param sb
+#'
+#' @return
+create_heatmap <- function(explor, sa, sb) {
+  sa %<>% stringr::str_split(" OR ", simplify = TRUE)
+  sb %<>% stringr::str_split(" OR ", simplify = TRUE)
 
-  set_a_syms <- purrr::map(setA, rlang::sym)
-  set_b_syms <- purrr::map(setB, rlang::sym)
+  set_a_syms <- purrr::map(sa, rlang::sym)
+  set_b_syms <- purrr::map(sb, rlang::sym)
 
   # find the names of terms we're not using
   other_names <- explor %>%
     dplyr::select(
-      -as.vector(setA),
-      -as.vector(setB),
+      -as.vector(sa),
+      -as.vector(sb),
       -eric, -query, -proquest
     ) %>%
     names()
@@ -42,8 +55,8 @@ create_heatmap <- function(explor, setA, setB) {
   heat_data <- explor %>%
     dplyr::summarize(set_a = paste(!!!set_a_syms), set_b = paste(!!!set_b_syms), eric) %>%
     dplyr::mutate(
-      set_a = translate_binary_to_label(set_a, list(setA)),
-      set_b = translate_binary_to_label(set_b, list(setB))
+      set_a = translate_binary_to_label(set_a, list(sa)),
+      set_b = translate_binary_to_label(set_b, list(sb))
     )
 
   # make the heatmap
@@ -60,15 +73,21 @@ create_heatmap <- function(explor, setA, setB) {
 }
 
 # TODO roxygen documentation
-create_summary <- function(explor, setA) {
-  setA %<>% stringr::str_split(" OR ", simplify = TRUE)
+#' Title
+#'
+#' @param explor
+#' @param sa
+#'
+#' @return
+create_summary <- function(explor, sa) {
+  sa %<>% stringr::str_split(" OR ", simplify = TRUE)
 
-  set_a_syms <- purrr::map(setA, rlang::sym)
+  set_a_syms <- purrr::map(sa, rlang::sym)
 
   # find the names of terms we're not using
   other_names <- explor %>%
     dplyr::select(
-      -as.vector(setA),
+      -as.vector(sa),
       -eric, -query, -proquest
     ) %>%
     names()
@@ -81,7 +100,7 @@ create_summary <- function(explor, setA) {
   # process as if we only have two terms
   data <- explor %>%
     dplyr::summarize(set_a = paste(!!!set_a_syms), eric) %>%
-    dplyr::mutate(set_a = translate_binary_to_label(set_a, list(setA)))
+    dplyr::mutate(set_a = translate_binary_to_label(set_a, list(sa)))
 
   # make the summary
   plot <- ggplot2::ggplot(data, ggplot2::aes(x = set_a, y = eric)) +
