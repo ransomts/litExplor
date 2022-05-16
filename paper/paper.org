@@ -61,7 +61,12 @@ ISSN={1521-9615}
 
 https://joss.readthedocs.io/en/latest/submitting.html#example-paper-and-bibliography
 
-* Methods/Development
+
+* Methods Journal
+
+[[JOSS]] is a great journal but it is focused on the distribution of the software. We want to find somewhere that has a greater focus on this tool as it integrates into the PRISMA guidelines [[cite:&pagePRISMA2020Statement2021]] 
+
+** Methods/Development
 
 FAVOR has been developed with a target audience of education researchers. The primary challenge of visualizing the data collected from the databases is in maintaining a reasonable cognitive load for the user. 
 
@@ -70,30 +75,29 @@ Specific terms relevant to a topic may have been updated, made more precise, or 
 Geographic factors have a large impact on the meanings of words as well. For example, in the United Kingdom, a polytechnical institution is an outdated term that is roughly comparable to American community college. 
 FAVOR has an option to filter search results to ERIC supported geographic regions such as England or the United States.
 
-* results/screenshots/walkthrough
+** Results/Screenshots/Walkthrough
 
-** Breakdown of options
+*** Breakdown of options
 
-* Case studies
+** Case studies
 
 We demonstrate a sample workflow of our tool with two case studies. 
 An aviation topic has  possibly less relevant or extraneous terms which are identified for removal. 
 A topic of computing identity is selected to demonstrate identification of possible terms for refinement.
 
-** Online aviation education
+*** Online aviation education
 
-** Computing Identity
+*** Computing Identity
 
-* discussion
+** Discussion
 
-** threats to validity
+*** Threats To Validity
 
-** future directions
+*** Future Directions
 
 As this work is targeting education researchers, ERIC is currently the only database being utilized. We make use of the official API to comply with resource usage restrictions, but this has a dual effect of opening our tool for other APIs. Interfaces to databases are commonly provided by other databases such as ProQuest, ScienceDirect, and ...
 
-
-* acknowledgements
+** Acknowledgements
 We would like to acknowledge the insight provided to this work by Dr. Eliza Gallagher and the faculty of the Clemson University Engineering and Science Education department as we have built and tuned this tool.
 
-* References
+** References
