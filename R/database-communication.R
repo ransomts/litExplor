@@ -48,8 +48,8 @@ get_eric_count <- function(str) {
   eric_url <- create_eric_url(str)
 
   # variable left out for future caching opportunity
-  req <- curl_fetch_memory(eric_url)
-  json_resp <- fromJSON(rawToChar(req$content))
+  req <- curl::curl_fetch_memory(eric_url)
+  json_resp <- rjson::fromJSON(rawToChar(req$content))
   return(json_resp$response$numFound)
 }
 get_eric_count <- Vectorize(get_eric_count)
