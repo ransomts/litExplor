@@ -15,7 +15,7 @@ litExplor <- function() {
       # Input for terms and options
       shiny::fillCol(style = "overflow-y:scroll; max-height: 600px",
         shiny::wellPanel(
-          shiny::textInput("terms1", "Term Sets", value = "FAA, Part 147"),
+          shiny::textInput("terms1", "Term Sets", value = "math, computing, science, engineering"),
           shiny::actionButton("add_term_set", "Add Term Set", class = "btn-success"),
           shiny::actionButton("remove_term_set", "Remove Term Set", class = "btn-danger"),
           shiny::wellPanel(
@@ -105,7 +105,7 @@ litExplor <- function() {
 
     number_input_boxes <- 1
 
-    number_input_boxes <- add_term_set(number_input_boxes, value = "Pandemic, Covid-19")
+    number_input_boxes <- add_term_set(number_input_boxes, value = "online learning, virtual education")
 
     shiny::observeEvent(input$add_term_set, {
       number_input_boxes <<- add_term_set(number_input_boxes)

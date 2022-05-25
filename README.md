@@ -9,6 +9,8 @@
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 [![R-CMD-check](https://github.com/ransomts/litExplor/workflows/R-CMD-check/badge.svg)](https://github.com/ransomts/litExplor/actions)
+[![GPL
+Licence](https://badges.frapsoft.com/os/gpl/gpl.svg?v=103)](https://opensource.org/licenses/GPL-3.0/)
 <!-- badges: end -->
 
 litExplor is made to help researchers get an feeling for the amount of
