@@ -275,7 +275,7 @@
     },
     "SystemRequirements": null
   },
-  "fileSize": "32.887KB",
+  "fileSize": "34.842KB",
   "citation": [
     {
       "@type": "ScholarlyArticle",
@@ -307,5 +307,6 @@
       }
     }
   ],
-  "codeRepository": "https://github.com/ransomts/litExplor"
+  "codeRepository": "https://github.com/ransomts/litExplor",
+  "readme": "https://github.com/ransomts/litExplor/blob/master/README.md"
 }

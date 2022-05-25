@@ -58,6 +58,13 @@ litExplor <- function() {
           shiny::uiOutput("compare_dropdown_b")
         )
       )
+    ), miniUI::miniTabPanel(
+      "Data",
+      shiny::fillCol(
+        shiny::wellPanel(
+          # TODO display explor queries & database results table here as a https://rstudio.github.io/DT/
+        )
+      )
     ))
   )
 
@@ -175,6 +182,7 @@ litExplor <- function() {
       explor <<- group_to_explor(group)
 
       for (database in input$databases) {
+        message(paste("Searching database: ", database))
         explor <<- dplyr::mutate(explor, "{database}" := get_count(database, query)) %>%
           tidyr::unnest(rlang::sym(database))
       }

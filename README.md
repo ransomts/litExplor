@@ -1,12 +1,14 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
+<!-- https://devguide.ropensci.org/building.html?q=testing#readme -->
 
 # litExplor
 
 <!-- badges: start -->
-<!-- [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/Naereen/StrapDown.js/graphs/commit-activity) -->
-<!-- [![R build status](https://github.com/ropensci/codemetar/workflows/R-CMD-check/badge.svg)](https://github.com/ropensci/codemetar/actions) -->
-<!-- [![Coverage Status](https://img.shields.io/codecov/c/github/ropensci/codemetar/master.svg)](https://codecov.io/github/ropensci/codemetar?branch=master) -->
+
+[![Lifecycle:
+experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[![R-CMD-check](https://github.com/ransomts/litExplor/workflows/R-CMD-check/badge.svg)](https://github.com/ransomts/litExplor/actions)
 <!-- badges: end -->
 
 litExplor is made to help researchers get an feeling for the amount of

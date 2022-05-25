@@ -8,3 +8,4 @@
 ^README\.Rmd$
 ^paper$
 ^codemeta\.json$
+^\.github$
