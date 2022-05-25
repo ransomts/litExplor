@@ -13,7 +13,7 @@ make_set(input_terms)
 A tibble with column names from \code{input_terms} representing search terms OR'd together
 #make_set("A OR B")
 #make_set("E OR F OR G")
-#make_set("M OR N OR O OR P")s
+#make_set("M OR N OR O OR P")
 }
 \description{
 make_set

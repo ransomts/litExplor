@@ -2,13 +2,20 @@
 % Please edit documentation in R/visualizations.R
 \name{create_heatmap}
 \alias{create_heatmap}
-\title{Title}
+\title{create_heatmap}
 \usage{
 create_heatmap(explor, sa, sb)
 }
 \arguments{
-\item{sb}{}
+\item{explor}{the explor tibble to construct the heatmap out of}
+
+\item{sa}{the first set of terms to compare}
+
+\item{sb}{the second set of terms to compare}
+}
+\value{
+a ggplot plot showing a heatmap correlation between the sets
 }
 \description{
-Title
+create_heatmap
 }

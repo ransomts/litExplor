@@ -7,32 +7,10 @@
 add_queries_to_group(group)
 }
 \arguments{
-\item{group}{a group as returned by the \code{\link{set_to_gorup}} function}
-
-\item{set_a}{Name of first set to combine}
-
-\item{set_b}{Name of second set to combine}
-
-\item{set}{}
-
-\item{...}{a number of binary variables from the columns of an explor tibble}
+\item{group}{a group as returned by the set_to_gorup function}
 }
 \value{
 a tibble with binary expansions of terms and English queries of them
-#make_queries_for_group(set_to_group(make_set("A OR B")))
-#make_queries_for_group(set_to_group(make_set("A OR B"), make_set("C OR D")))
-combine_augmented_sets
-
-An augmented set is a term set tibble with queries. In order to combine
-them, we need a cartesian product on the term binaries but the queries are
-combined with an " AND " between them.
-
-a tibble with the binary expansions of the sets present and queries combined
-make_queries_for_set
-
-make_query
-
-A string representing the terms present in the provided columns
 }
 \description{
 add_queries_to_group

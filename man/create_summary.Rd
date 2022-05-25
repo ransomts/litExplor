@@ -2,13 +2,18 @@
 % Please edit documentation in R/visualizations.R
 \name{create_summary}
 \alias{create_summary}
-\title{Title}
+\title{create_summary}
 \usage{
 create_summary(explor, sa)
 }
 \arguments{
-\item{sa}{}
+\item{explor}{the explor object to visualize}
+
+\item{sa}{the set of terms from the explor to show}
+}
+\value{
+a ggplot showing a histogram of terms set
 }
 \description{
-Title
+create_summary
 }

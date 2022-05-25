@@ -13,19 +13,28 @@ litExplor <- function() {
 
       # Sidebar layout with input and output definitions
       # Input for terms and options
-      shiny::fillCol(
+      shiny::fillCol(style = "overflow-y:scroll; max-height: 600px",
         shiny::wellPanel(
-          shiny::textInput("terms1", "Term Set", value = "FAA, Part 147"),
+          shiny::textInput("terms1", "Term Sets", value = "FAA, Part 147"),
           shiny::actionButton("add_term_set", "Add Term Set", class = "btn-success"),
+          shiny::actionButton("remove_term_set", "Remove Term Set", class = "btn-danger"),
           shiny::wellPanel(
-            shiny::tags$h4("Options"),
-            shiny::checkboxInput("peer", "Peer Reviewed", value = FALSE),
-            shiny::radioButtons(
-              "database", "Database: ",
-              c(
+            shiny::checkboxGroupInput("search_options", "Options:",
+                                      choices = c("Peer Reviewed")),
+            shiny::numericInput("start_year", "Start year: ",
+                                value = 1970, step = 1),
+            shiny::numericInput("end_year", "End year: ",
+                                value = 2022, step = 1),
+            shiny::checkboxGroupInput(
+              "databases", "Database:",
+              choices = c(
                 "ERIC" = "eric",
-                "ProQuest" = "proquest"
-              )
+                "ProQuest" = "proquest",
+                "arXiv" = "arxiv",
+                "JSTOR" = "jstor",
+                "ASEE PEER" = "asee_peer",
+                "PLOS" = "plos"
+              ), inline = TRUE
             )
           ),
           shiny::actionButton("search", "Search", class = "btn-success"),
@@ -61,20 +70,28 @@ litExplor <- function() {
       })
 
       return(terms_list %>% purrr::map(function(x) {
-        stringr::str_replace_all(x, ",", " OR ") %>% stringr::str_squish
+        stringr::str_replace_all(x, ",", " OR ") %>% stringr::str_squish()
       }))
     }
 
     add_term_set <- function(number_input_boxes, value = "") {
-      input_box <- shiny::textInput(paste0("terms", number_input_boxes + 1), "", value = value)
 
       shiny::insertUI(
         selector = paste0("#terms", number_input_boxes),
         where = "afterEnd",
-        ui = input_box
+        ui = shiny::textInput(paste0("terms", number_input_boxes + 1), "", value = value)
       )
 
       return(number_input_boxes + 1)
+    }
+
+    remove_term_set <- function(number_input_boxes) {
+
+      if (number_input_boxes <= 1) { return(number_input_boxes) }
+      shiny::removeUI(
+        selector = paste0("#terms", number_input_boxes)
+      )
+      return(number_input_boxes - 1)
     }
 
     explor <- NULL
@@ -87,6 +104,9 @@ litExplor <- function() {
       number_input_boxes <<- add_term_set(number_input_boxes)
     })
 
+    shiny::observeEvent(input$remove_term_set, {
+      number_input_boxes <<- remove_term_set(number_input_boxes)
+    })
 
     shiny::observeEvent(input$summary_dropdown, {
       output$summary_graph <- shiny::renderPlot(create_summary(explor, input$summary_dropdown))
@@ -116,10 +136,9 @@ litExplor <- function() {
     })
 
     shiny::observeEvent(input$search, {
-      print('inside search observer')
+
       terms_list <- get_input_terms(input, number_input_boxes)
 
-      print(terms_list)
       output$summary_dropdown <- shiny::renderUI({
         shiny::selectInput(
           "summary_dropdown",
@@ -127,8 +146,6 @@ litExplor <- function() {
           c(terms_list)
         )
       })
-
-      print('2')
 
       if (length(terms_list) < 2) {
         output$compare_dropdown_a <- shiny::renderUI({
@@ -153,17 +170,20 @@ litExplor <- function() {
         group <- set_to_group(sets[[1]], sets[[2:length(sets)]])
       }
 
-      group %<>% make_queries_for_group
+      group %<>% add_queries_to_group
 
       explor <<- group_to_explor(group)
 
-      explor <<- dplyr::mutate(explor, eric = get_eric_count(query)) %>% tidyr::unnest(eric)
-
+      for (database in input$databases) {
+        explor <<- dplyr::mutate(explor, "{database}" := get_count(database, query)) %>%
+          tidyr::unnest(rlang::sym(database))
+      }
+      explor <<- dplyr::mutate(explor, total_count = rowSums(dplyr::across(input$databases)))
       # output$comparison_graph <- renderPlot({
       #   create_compare_graph(explor)
       # })
     })
   }
 
-  shiny::runGadget(ui, server, viewer = shiny::dialogViewer("explor"))
+  shiny::runGadget(ui, server, viewer = shiny::dialogViewer("litExplor"))
 }

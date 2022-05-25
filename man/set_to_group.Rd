@@ -10,10 +10,6 @@ set_to_group(set, ...)
 \item{set}{a list of term strings}
 
 \item{...}{additional sets}
-
-\item{i}{an integer}
-
-\item{n}{the index of the bit to retreive}
 }
 \value{
 a group tibble, representing search term sets which are AND'd together
@@ -22,9 +18,6 @@ set_to_group(make_set("A OR B"), make_set("C OR D"))
 generate_name_from_set
 
 string with the terms deliminated by an underscore
-nth_bit
-
-the nth bit of an integer
 }
 \description{
 set_to_group

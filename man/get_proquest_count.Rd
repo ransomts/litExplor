@@ -7,7 +7,10 @@
 get_proquest_count(str)
 }
 \arguments{
-\item{str}{}
+\item{str}{terms to search for}
+}
+\value{
+an integer with the corresponding number of articles proquest has for the search
 }
 \description{
 get_proquest_count

@@ -1,12 +1,11 @@
-# TODO roxygen documentation
-#' Title
+#' translate_binary_to_label
 #'
-#' @param binary
-#' @param sym
+#' @param binary the binary columns from an explor tibble
+#' @param sym array of term strings
 #'
-#' @return
+#' @return a string with the indicated symbols OR'd together
 translate_binary_to_label <- function(binary, sym) {
-  sym_holder <- sym
+
   present_vars <- c()
   binary_vars <- stringr::str_split(binary, pattern = " ", simplify = TRUE)
 
@@ -20,40 +19,37 @@ translate_binary_to_label <- function(binary, sym) {
 }
 translate_binary_to_label <- Vectorize(translate_binary_to_label)
 
-# TODO roxygen documentation
-#' Title
+#' create_heatmap
 #'
-#' @param explor
-#' @param sa
-#' @param sb
+#' @param explor the explor tibble to construct the heatmap out of
+#' @param sa the first set of terms to compare
+#' @param sb the second set of terms to compare
 #'
-#' @return
+#' @return a ggplot plot showing a heatmap correlation between the sets
 create_heatmap <- function(explor, sa, sb) {
-  sa %<>% stringr::str_split(" OR ", simplify = TRUE)
-  sb %<>% stringr::str_split(" OR ", simplify = TRUE)
+  sa %<>% stringr::str_split(pattern = " OR ", simplify = TRUE)
+  sb %<>% stringr::str_split(pattern = " OR ", simplify = TRUE)
 
   set_a_syms <- purrr::map(sa, rlang::sym)
   set_b_syms <- purrr::map(sb, rlang::sym)
 
   # find the names of terms we're not using
   other_names <- explor %>%
-    dplyr::select(
-      -as.vector(sa),
-      -as.vector(sb),
-      -eric, -query, -proquest
-    ) %>%
+    dplyr::select(-as.vector(sa)) %>%
+    dplyr::select(-as.vector(sb)) %>%
+    dplyr::select(where(is.integer)) %>%
     names()
 
   if (length(other_names) > 1) {
     # filter to only where the terms we're not using are 0
     explor %<>%
-      dplyr::filter_at(vars(other_names), all_vars(. == 0)) %>%
+      dplyr::filter_at(dplyr::vars(other_names), dplyr::all_vars(. == 0)) %>%
       dplyr::select(-other_names)
   }
 
   # process as if we only have two terms
   heat_data <- explor %>%
-    dplyr::summarize(set_a = paste(!!!set_a_syms), set_b = paste(!!!set_b_syms), eric) %>%
+    dplyr::summarize(set_a = paste(!!!set_a_syms), set_b = paste(!!!set_b_syms), total_count) %>%
     dplyr::mutate(
       set_a = translate_binary_to_label(set_a, list(sa)),
       set_b = translate_binary_to_label(set_b, list(sb))
@@ -61,7 +57,7 @@ create_heatmap <- function(explor, sa, sb) {
 
   # make the heatmap
   heat_plot <- heat_data %>%
-    ggplot2::ggplot(ggplot2::aes(set_a, set_b, fill = eric)) +
+    ggplot2::ggplot(ggplot2::aes(set_a, set_b, fill = total_count)) +
     ggplot2::geom_tile() +
     ggplot2::labs(x = NULL, y = NULL) +
     ggplot2::theme(
@@ -72,38 +68,36 @@ create_heatmap <- function(explor, sa, sb) {
   return(heat_plot)
 }
 
-# TODO roxygen documentation
-#' Title
+#' create_summary
 #'
-#' @param explor
-#' @param sa
+#' @param explor the explor object to visualize
+#' @param sa the set of terms from the explor to show
 #'
-#' @return
+#' @return a ggplot showing a histogram of terms set
 create_summary <- function(explor, sa) {
-  sa %<>% stringr::str_split(" OR ", simplify = TRUE)
+
+  sa %<>% stringr::str_split(pattern = " OR ", simplify = TRUE)
 
   set_a_syms <- purrr::map(sa, rlang::sym)
 
   # find the names of terms we're not using
   other_names <- explor %>%
-    dplyr::select(
-      -as.vector(sa),
-      -eric, -query, -proquest
-    ) %>%
+    dplyr::select(-as.vector(sa)) %>%
+    dplyr::select(where(is.integer)) %>%
     names()
 
   # filter to only where the terms we're not using are 0
   explor %<>%
-    dplyr::filter_at(vars(other_names), all_vars(. == 0)) %>%
+    dplyr::filter_at(dplyr::vars(other_names), dplyr::all_vars(. == 0)) %>%
     dplyr::select(-other_names)
 
   # process as if we only have two terms
   data <- explor %>%
-    dplyr::summarize(set_a = paste(!!!set_a_syms), eric) %>%
+    dplyr::summarize(set_a = paste(!!!set_a_syms), total_count) %>%
     dplyr::mutate(set_a = translate_binary_to_label(set_a, list(sa)))
 
   # make the summary
-  plot <- ggplot2::ggplot(data, ggplot2::aes(x = set_a, y = eric)) +
+  plot <- ggplot2::ggplot(data, ggplot2::aes(x = set_a, y = total_count)) +
     ggplot2::geom_bar(stat = "identity") +
     ggplot2::scale_y_log10(
       n.breaks = 10,

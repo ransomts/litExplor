@@ -2,13 +2,18 @@
 % Please edit documentation in R/visualizations.R
 \name{translate_binary_to_label}
 \alias{translate_binary_to_label}
-\title{Title}
+\title{translate_binary_to_label}
 \usage{
 translate_binary_to_label(binary, sym)
 }
 \arguments{
-\item{sym}{}
+\item{binary}{the binary columns from an explor tibble}
+
+\item{sym}{array of term strings}
+}
+\value{
+a string with the indicated symbols OR'd together
 }
 \description{
-Title
+translate_binary_to_label
 }
