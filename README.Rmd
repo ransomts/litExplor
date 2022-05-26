@@ -50,6 +50,11 @@ Start the dialog either from the Addins menu in rstudio or with a call to `litEx
 
 ## Screenshots
 
+![example search screen](man/figures/search-example.png)
+![example heatmap screen](man/figures/heatmap-example.png)
+![example summary screen](man/figures/summary-example.png)
+
+
 
 
 <!-- You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date. `devtools::build_readme()` is handy for this. You could also use GitHub Actions to re-render `README.Rmd` every time you push. An example workflow can be found here: <https://github.com/r-lib/actions/tree/v1/examples>. -->
