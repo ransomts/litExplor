@@ -47,19 +47,17 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">group_to_explor</span><span class="op">(</span><span class="va">group_with_queries</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">group_to_explor</span><span class="op">(</span><span class="va">group</span><span class="op">)</span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
-    <dl><dt>group_with_queries</dt>
-<dd><p>a group as created by the add_queries_to_group function</p></dd>
+    <dl><dt>group</dt>
+<dd><p>a group as returned by the set_to_gorup function</p></dd>
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>a fully expanded explor tibble without paper counts
-group_to_explor(add_queries_to_group(set_to_group(make_set("A OR B"))))
-group_to_explor(add_queries_to_group(set_to_group(make_set("A OR B"), make_set("C OR D"))))</p>
+    <p>a tibble with binary expansions of terms and English queries of them</p>
     </div>
 
   </div>
