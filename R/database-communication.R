@@ -5,16 +5,16 @@
 #' @param query a query string, eg A OR B AND C
 #' @return an integer for the count of papers from a database
 get_count <- function(database, query) {
-
   return(switch(database,
-                "eric" = get_eric_count(query),
-                "jstor" = get_jstor_count(query),
-                "proquest" = get_proquest_count(query),
-                "arxiv" = get_arxiv_count(query),
-                "asee_peer" = get_asee_peer_count(query),
-                "google_scholar" = get_google_scholar_count(query),
-                "ebsco" = get_ebsco_count(query),
-                "plos" = get_plos_count(query)))
+    "eric" = get_eric_count(query),
+    "jstor" = get_jstor_count(query),
+    "proquest" = get_proquest_count(query),
+    "arxiv" = get_arxiv_count(query),
+    "asee_peer" = get_asee_peer_count(query),
+    "google_scholar" = get_google_scholar_count(query),
+    "ebsco" = get_ebsco_count(query),
+    "plos" = get_plos_count(query)
+  ))
 }
 
 #' get_eric_count
@@ -22,7 +22,6 @@ get_count <- function(database, query) {
 #'
 #' @return an integer with the corresponding number of articles eric has for the search
 get_eric_count <- function(str) {
-
   create_eric_url <- function(search_terms, start = 0, rows = 0,
                               fields = list(list("*"), list("peerreviewed", "'T'"))) {
 
@@ -40,12 +39,12 @@ get_eric_count <- function(str) {
     }, fields), collapse = " ")
 
     unencoded_url <- paste(eric_base_url,
-                           "?search=", formatted_terms,
-                           "&format=", format,
-                           "&start=", start,
-                           "&rows=", rows,
-                           "&fields=", formatted_fields,
-                           sep = ""
+      "?search=", formatted_terms,
+      "&format=", format,
+      "&start=", start,
+      "&rows=", rows,
+      "&fields=", formatted_fields,
+      sep = ""
     )
 
     return(utils::URLencode(unencoded_url)) # urltools::url_encode broke api compatibility, using utils::URLencode instead
@@ -68,7 +67,6 @@ get_eric_count <- Vectorize(get_eric_count)
 #'
 #' @return an integer with the corresponding number of articles jstor has for the search
 get_jstor_count <- function(str) {
-
   create_jstor_url <- function(str) {  }
 
   testthat::skip("jstor communication not implemented")
@@ -126,7 +124,7 @@ get_arxiv_count <- function(str) {
   # create_arxiv_url <- function(str) {  }
 
   # testthat::skip("arXiv communication not implemented")
-  return(aRxiv::arxiv_count(str))
+  return(as.double(aRxiv::arxiv_count(str)))
 }
 get_arxiv_count <- Vectorize(get_arxiv_count)
 
@@ -137,7 +135,6 @@ get_arxiv_count <- Vectorize(get_arxiv_count)
 #'
 #' @return an integer with the corresponding number of articles asee has for the search
 get_asee_peer_count <- function(str) {
-
   create_asee_peer_url <- function(str) {  }
 
   testthat::skip("asee_peer communication not implemented")
@@ -152,7 +149,6 @@ get_asee_peer_count <- Vectorize(get_asee_peer_count)
 #'
 #' @return an integer with the corresponding number of articles google has for the search
 get_google_scholar_count <- function(str) {
-
   create_google_scholar_url <- function(str) {  }
 
   testthat::skip("google_scholar communication not implemented")
@@ -167,7 +163,6 @@ get_google_scholar_count <- Vectorize(get_google_scholar_count)
 #'
 #' @return an integer with the corresponding number of articles ebsco has for the search
 get_ebsco_count <- function(str) {
-
   create_ebsco_url <- function(str) {  }
 
   testthat::skip("ebsco communication not implemented")

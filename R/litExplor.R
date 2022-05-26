@@ -13,18 +13,22 @@ litExplor <- function() {
 
       # Sidebar layout with input and output definitions
       # Input for terms and options
-      shiny::fillCol(style = "overflow-y:scroll; max-height: 600px",
+      shiny::fillCol(
+        style = "overflow-y:scroll; max-height: 600px",
         shiny::wellPanel(
           shiny::textInput("terms1", "Term Sets", value = "math, computing, science, engineering"),
           shiny::actionButton("add_term_set", "Add Term Set", class = "btn-success"),
           shiny::actionButton("remove_term_set", "Remove Term Set", class = "btn-danger"),
           shiny::wellPanel(
             shiny::checkboxGroupInput("search_options", "Options:",
-                                      choices = c("Peer Reviewed")),
+              choices = c("Peer Reviewed")
+            ),
             shiny::numericInput("start_year", "Start year: ",
-                                value = 1970, step = 1),
+              value = 1970, step = 1
+            ),
             shiny::numericInput("end_year", "End year: ",
-                                value = 2022, step = 1),
+              value = 2022, step = 1
+            ),
             shiny::checkboxGroupInput(
               "databases", "Database:",
               choices = c(
@@ -82,7 +86,6 @@ litExplor <- function() {
     }
 
     add_term_set <- function(number_input_boxes, value = "") {
-
       shiny::insertUI(
         selector = paste0("#terms", number_input_boxes),
         where = "afterEnd",
@@ -93,8 +96,9 @@ litExplor <- function() {
     }
 
     remove_term_set <- function(number_input_boxes) {
-
-      if (number_input_boxes <= 1) { return(number_input_boxes) }
+      if (number_input_boxes <= 1) {
+        return(number_input_boxes)
+      }
       shiny::removeUI(
         selector = paste0("#terms", number_input_boxes)
       )
@@ -138,12 +142,12 @@ litExplor <- function() {
 
     shiny::observeEvent(input$compare_dropdown_b, {
       output$comparison_graph <- shiny::renderPlot(create_heatmap(explor,
-                                                                  sa = input$compare_dropdown_a,
-                                                                  sb = input$compare_dropdown_b))
+        sa = input$compare_dropdown_a,
+        sb = input$compare_dropdown_b
+      ))
     })
 
     shiny::observeEvent(input$search, {
-
       terms_list <- get_input_terms(input, number_input_boxes)
 
       output$summary_dropdown <- shiny::renderUI({
@@ -176,8 +180,6 @@ litExplor <- function() {
       } else {
         group <- set_to_group(sets[[1]], sets[[2:length(sets)]])
       }
-
-      group %<>% add_queries_to_group
 
       explor <<- group_to_explor(group)
 

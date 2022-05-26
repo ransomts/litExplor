@@ -4,15 +4,13 @@
 \alias{group_to_explor}
 \title{group_to_explor}
 \usage{
-group_to_explor(group_with_queries)
+group_to_explor(group)
 }
 \arguments{
-\item{group_with_queries}{a group as created by the add_queries_to_group function}
+\item{group}{a group as returned by the set_to_gorup function}
 }
 \value{
-a fully expanded explor tibble without paper counts
-group_to_explor(add_queries_to_group(set_to_group(make_set("A OR B"))))
-group_to_explor(add_queries_to_group(set_to_group(make_set("A OR B"), make_set("C OR D"))))
+a tibble with binary expansions of terms and English queries of them
 }
 \description{
 group_to_explor

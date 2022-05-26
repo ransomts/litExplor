@@ -13,6 +13,17 @@ make_set <- function(input_terms) {
 
   term_list <- unlist(stringr::str_split(input_terms, " OR "))
 
+  deduped_term_list <- term_list %>%
+    tibble::as_tibble() %>%
+    dplyr::distinct() %>%
+    dplyr::pull(value)
+
+  if (length(term_list) != length(deduped_term_list)) {
+    warning("Removed duplicates from term list")
+  }
+
+  term_list <- deduped_term_list
+
   # TODO debug duplicate detection
   # if (term_list %>% table %>% tibble::enframe %>% dplyr::filter(value > 1) %>% nrow > 1) {
   #   stop("duplicate input term detected: %s",
@@ -69,11 +80,10 @@ set_to_group <- function(set, ...) {
   return(tib)
 }
 
-#' add_queries_to_group
+#' group_to_explor
 #' @param group a group as returned by the set_to_gorup function
 #' @return a tibble with binary expansions of terms and English queries of them
-add_queries_to_group <- function(group) {
-
+group_to_explor <- function(group) {
   combine_augmented_sets <- function(set_a, set_b) {
     combined_acc <- dplyr::bind_cols(
       set_a %>% dplyr::slice(0) %>% dplyr::select(-query),
@@ -116,7 +126,6 @@ add_queries_to_group <- function(group) {
   }
 
   make_queries_for_set <- function(set) {
-
     make_query <- function(...) {
       tmp_names <- names(list(...))
       new_names <- c()
@@ -162,15 +171,6 @@ add_queries_to_group <- function(group) {
   return(aug_query_tib_acc)
 }
 
-#' group_to_explor
-#' @param group_with_queries a group as created by the add_queries_to_group function
-#' @return a fully expanded explor tibble without paper counts
-#' group_to_explor(add_queries_to_group(set_to_group(make_set("A OR B"))))
-#' group_to_explor(add_queries_to_group(set_to_group(make_set("A OR B"), make_set("C OR D"))))
-group_to_explor <- function(group_with_queries) {
-  return(group_with_queries)
-}
-
 #' An example explor tibble
 #'
 #' A dataset containing a fully formed term search set,
@@ -187,4 +187,3 @@ group_to_explor <- function(group_with_queries) {
 #'    \item{proquest}{Number of matching articles in Proquest}
 #' }
 "example_explor_b"
-

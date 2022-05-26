@@ -5,7 +5,6 @@
 #'
 #' @return a string with the indicated symbols OR'd together
 translate_binary_to_label <- function(binary, sym) {
-
   present_vars <- c()
   binary_vars <- stringr::str_split(binary, pattern = " ", simplify = TRUE)
 
@@ -75,7 +74,6 @@ create_heatmap <- function(explor, sa, sb) {
 #'
 #' @return a ggplot showing a histogram of terms set
 create_summary <- function(explor, sa) {
-
   sa %<>% stringr::str_split(pattern = " OR ", simplify = TRUE)
 
   set_a_syms <- purrr::map(sa, rlang::sym)

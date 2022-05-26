@@ -15,6 +15,7 @@ Imports:
     aRxiv,
     curl,
     dplyr,
+    DT,
     ggplot2,
     magrittr,
     miniUI,
