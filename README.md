@@ -12,7 +12,7 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 [![GPL
 Licence](https://badges.frapsoft.com/os/gpl/gpl.svg?v=103)](https://opensource.org/licenses/GPL-3.0/)
 [![Codecov test
-coverage](https://codecov.io/gh/ransomts/ed_database_explor/branch/master/graph/badge.svg)](https://app.codecov.io/gh/ransomts/ed_database_explor?branch=master)
+coverage](https://codecov.io/gh/ransomts/litExplor/branch/master/graph/badge.svg)](https://app.codecov.io/gh/ransomts/litExplor?branch=master)
 <!-- badges: end -->
 
 litExplor is made to help researchers get an feeling for the amount of
