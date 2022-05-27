@@ -60,8 +60,8 @@ create_heatmap <- function(explor, sa, sb) {
     ggplot2::geom_tile() +
     ggplot2::labs(x = NULL, y = NULL) +
     ggplot2::theme(
-      axis.text.x = ggplot2::element_text(size = 15, vjust = 0.5, angle = 45),
-      axis.text.y = ggplot2::element_text(size = 15)
+      axis.text.x = ggplot2::element_text(size = 10, angle = 45),
+      axis.text.y = ggplot2::element_text(size = 10)
     )
 
   return(heat_plot)
@@ -102,7 +102,8 @@ create_summary <- function(explor, sa) {
       labels = scales::label_number()
     ) +
     ggplot2::labs(x = NULL) +
-    ggplot2::theme(axis.text.x = ggplot2::element_text(size = 10, angle = 45, vjust = 0))
+    ggplot2::theme(axis.text.x = ggplot2::element_text(size = 10, angle = 45, vjust = 0)) +
+    ggplot2::coord_flip()
 
   return(plot)
 }

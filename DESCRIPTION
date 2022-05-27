@@ -23,6 +23,7 @@ Imports:
     rjson,
     rlang,
     rplos,
+    plotly,
     scales,
     shiny,
     stringr,
@@ -34,7 +35,9 @@ Suggests:
     covr,
     knitr,
     rmarkdown,
-    testthat (>= 3.0.0)
+    styler,
+    testthat (>= 3.0.0),
+    todor
 VignetteBuilder: knitr
 Config/testthat/parallel: true
 Config/testthat/edition: 3

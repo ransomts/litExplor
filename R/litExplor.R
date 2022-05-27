@@ -49,7 +49,7 @@ litExplor <- function() {
       "Summary",
       shiny::fillCol(
         shiny::wellPanel(
-          shiny::plotOutput("summary_graph"),
+          plotly::plotlyOutput("summary_graph"),
           shiny::uiOutput("summary_dropdown")
         )
       )
@@ -57,7 +57,7 @@ litExplor <- function() {
       "Comparison",
       shiny::fillCol(
         shiny::wellPanel(
-          shiny::plotOutput("comparison_graph"),
+          plotly::plotlyOutput("comparison_graph"),
           shiny::uiOutput("compare_dropdown_a"),
           shiny::uiOutput("compare_dropdown_b")
         )
@@ -120,7 +120,7 @@ litExplor <- function() {
     })
 
     shiny::observeEvent(input$summary_dropdown, {
-      output$summary_graph <- shiny::renderPlot(create_summary(explor, input$summary_dropdown))
+      output$summary_graph <- plotly::renderPlotly(create_summary(explor, input$summary_dropdown))
     })
 
     shiny::observeEvent(input$compare_dropdown_a, {
@@ -141,7 +141,7 @@ litExplor <- function() {
     })
 
     shiny::observeEvent(input$compare_dropdown_b, {
-      output$comparison_graph <- shiny::renderPlot(create_heatmap(explor,
+      output$comparison_graph <- plotly::renderPlotly(create_heatmap(explor,
         sa = input$compare_dropdown_a,
         sb = input$compare_dropdown_b
       ))

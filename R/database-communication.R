@@ -47,6 +47,7 @@ get_eric_count <- function(str) {
       sep = ""
     )
 
+    message(paste("Searching ERIC for: ", str))
     return(utils::URLencode(unencoded_url)) # urltools::url_encode broke api compatibility, using utils::URLencode instead
   }
 
