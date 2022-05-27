@@ -7,18 +7,18 @@
 \format{
 A tibble with 511 rows and 11 colums:
 \describe{
-\item{math}
-\item{science}
-\item{engineering}
-\item{computing}
-\item{online education}
-\item{virtual learning}
-\item{distance education}
-\item{two year institution}
-\item{community college} the search terms
-\item{query} the english query translations
-\item{eric} the counts from ERIC
-\item{total_count} total counts across all databases (here only ERIC)
+  \item{math} search term
+  \item{science} search term
+  \item{engineering} search term
+  \item{computing} search term
+  \item{online education} search term
+  \item{virtual learning} search term
+  \item{distance education} search term
+  \item{two year institution} search term
+  \item{community college} search term
+  \item{query} the english query translations
+  \item{eric} the counts from ERIC
+  \item{total_count} total counts across all databases (here only ERIC)
 }
 }
 \source{

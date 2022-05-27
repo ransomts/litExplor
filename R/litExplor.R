@@ -66,7 +66,7 @@ litExplor <- function() {
       "Data",
       shiny::fillCol(
         shiny::wellPanel(
-          # TODO display explor queries & database results table here as a https://rstudio.github.io/DT/
+          DT::DTOutput('explor_table')
         )
       )
     ))
@@ -192,8 +192,9 @@ litExplor <- function() {
       # output$comparison_graph <- renderPlot({
       #   create_compare_graph(explor)
       # })
+      output$explor_table <- DT::renderDataTable(explor)
     })
   }
 
-  shiny::runGadget(ui, server, viewer = shiny::dialogViewer("litExplor"))
+  shiny::runGadget(ui, server)
 }
