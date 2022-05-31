@@ -57,7 +57,7 @@ litExplor <- function() {
       "Comparison",
       shiny::fillCol(
         shiny::wellPanel(
-          plotly::plotlyOutput("comparison_graph"),
+          plotly::plotlyOutput("comparison_graph", height = "100%"),
           shiny::uiOutput("compare_dropdown_a"),
           shiny::uiOutput("compare_dropdown_b")
         )

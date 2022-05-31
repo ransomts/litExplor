@@ -50,10 +50,13 @@ Start the dialog either from the Addins menu in rstudio or with a call to `litEx
 
 ## Screenshots
 
+<center>
 ![example search screen](man/figures/search-example.png)
+
 ![example heatmap screen](man/figures/heatmap-example.png)
 ![example summary screen](man/figures/summary-example.png)
 
+\center
 
 
 
