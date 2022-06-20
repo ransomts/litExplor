@@ -81,37 +81,37 @@ get_jstor_count <- Vectorize(get_jstor_count)
 #' @param str terms to search for
 #'
 #' @return an integer with the corresponding number of articles proquest has for the search
-get_proquest_count <- function(str) {
-  test <- xml2::read_xml('<searchRequest xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"/searchapi_v1.xsd\">
-	<search>
-		<query>S1 AND (S2 OR S3)</query>
-		<databases>
-			<database>medlineprof</database>
-		</databases>
-		<set id=\"3\">
-			<query>treatment</query>
-			<databases>
-				<database>medlineprof</database>
-			</databases>
-		</set>
-		<set id=\"2\">
-			<query>mesh.#(\"ammonium chloride\")</query>
-			<databases>
-				<database>medlineprof</database>
-			</databases>
-		</set>
-		<set id=\"1\">
-			<query>ti,ab(intravenous)</query>
-			<databases>
-				<database>medlineprof</database>
-			</databases>
-		</set>
-	</search>
-</searchRequest>')
-  create_proquest_url <- function(str) {  }
+get_proquest_count <- function(terms, database = "medlineprof", authorization = "Bearer 8461684a-5a79-407c-9321-93d8d719ddeb") {
+  formatted_terms <- paste(mapply(function(x) {
+    paste(unlist(x), collapse = " OR ")
+  }, terms), collapse = " AND ")
+  create_proquest_data <- function(terms, database) {
+    message(paste("Searching ProQuest for: ", terms))
 
-  testthat::skip("Proquest communication not implemented")
-  return(0)
+    return(
+      paste0(
+      '<searchRequest xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"/searchapi_v1.xsd\">
+    	<search>
+    		<query>', terms, '</query>
+    		<databases>
+    			<database>', database, '</database>
+    		</databases>
+    	</search>
+      </searchRequest>'))
+  }
+
+  proquest_base_url <- "https://api-dialog.proquest.com/v1/search"
+
+  headers = c(
+    `Authorization` = 'Bearer 8461684a-5a79-407c-9321-93d8d719ddeb',
+    `Content-Type` = 'text/xml'
+  )
+
+  data = create_proquest_data(formatted_terms, database)
+
+  response <- httr::POST(url = proquest_base_url, httr::add_headers(.headers = headers), body = data)
+
+  return(content(response)$searchResponse$result$docsFound)
 }
 get_proquest_count <- Vectorize(get_proquest_count)
 
