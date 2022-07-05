@@ -47,13 +47,25 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_proquest_count</span><span class="op">(</span><span class="va">str</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_proquest_count</span><span class="op">(</span></span>
+<span>  <span class="va">terms</span>,</span>
+<span>  database <span class="op">=</span> <span class="st">"medlineprof"</span>,</span>
+<span>  authorization <span class="op">=</span> <span class="st">"Bearer 8461684a-5a79-407c-9321-93d8d719ddeb"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
-    <dl><dt>str</dt>
+    <dl><dt>terms</dt>
 <dd><p>terms to search for</p></dd>
+
+
+<dt>database</dt>
+<dd><p>proquest has lots of databases, which one are we after?</p></dd>
+
+
+<dt>authorization</dt>
+<dd><p>our bearer token for access</p></dd>
 
 </dl></div>
     <div id="value">
