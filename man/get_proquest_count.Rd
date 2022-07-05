@@ -4,10 +4,18 @@
 \alias{get_proquest_count}
 \title{get_proquest_count}
 \usage{
-get_proquest_count(str)
+get_proquest_count(
+  terms,
+  database = "medlineprof",
+  authorization = "Bearer 8461684a-5a79-407c-9321-93d8d719ddeb"
+)
 }
 \arguments{
-\item{str}{terms to search for}
+\item{terms}{terms to search for}
+
+\item{database}{proquest has lots of databases, which one are we after?}
+
+\item{authorization}{our bearer token for access}
 }
 \value{
 an integer with the corresponding number of articles proquest has for the search

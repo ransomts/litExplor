@@ -78,7 +78,9 @@ get_jstor_count <- Vectorize(get_jstor_count)
 # TODO implement proquest communication
 #' get_proquest_count
 #'
-#' @param str terms to search for
+#' @param terms terms to search for
+#' @param database proquest has lots of databases, which one are we after?
+#' @param authorization our bearer token for access
 #'
 #' @return an integer with the corresponding number of articles proquest has for the search
 get_proquest_count <- function(terms, database = "medlineprof", authorization = "Bearer 8461684a-5a79-407c-9321-93d8d719ddeb") {
