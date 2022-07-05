@@ -33,7 +33,8 @@ test_that("queries can be added to group tibble", {
     group_to_explor(set_to_group(
       make_set(test_terms_a),
       make_set(test_terms_d),
-      make_set(test_terms_e))) %>% dplyr::pull(query),
+      make_set(test_terms_e)
+    )) %>% dplyr::pull(query),
     c(
       "A", "A AND D", "A AND E",
       "A AND D OR E", "A AND F", "A AND D OR F",

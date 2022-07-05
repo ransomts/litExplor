@@ -85,33 +85,36 @@ get_proquest_count <- function(terms, database = "medlineprof", authorization = 
   formatted_terms <- paste(mapply(function(x) {
     paste(unlist(x), collapse = " OR ")
   }, terms), collapse = " AND ")
+
   create_proquest_data <- function(terms, database) {
     message(paste("Searching ProQuest for: ", terms))
 
     return(
       paste0(
-      '<searchRequest xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"/searchapi_v1.xsd\">
+        '<searchRequest xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"/searchapi_v1.xsd\">
     	<search>
-    		<query>', terms, '</query>
+    		<query>', terms, "</query>
     		<databases>
-    			<database>', database, '</database>
+    			<database>", database, "</database>
     		</databases>
     	</search>
-      </searchRequest>'))
+      </searchRequest>"
+      )
+    )
   }
 
   proquest_base_url <- "https://api-dialog.proquest.com/v1/search"
 
-  headers = c(
-    `Authorization` = 'Bearer 8461684a-5a79-407c-9321-93d8d719ddeb',
-    `Content-Type` = 'text/xml'
+  headers <- c(
+    `Authorization` = "Bearer 8461684a-5a79-407c-9321-93d8d719ddeb",
+    `Content-Type` = "text/xml"
   )
 
-  data = create_proquest_data(formatted_terms, database)
+  data <- create_proquest_data(formatted_terms, database)
 
   response <- httr::POST(url = proquest_base_url, httr::add_headers(.headers = headers), body = data)
 
-  return(content(response)$searchResponse$result$docsFound)
+  return(as.double(httr::content(response)$searchResponse$result$docsFound))
 }
 get_proquest_count <- Vectorize(get_proquest_count)
 

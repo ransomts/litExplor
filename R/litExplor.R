@@ -66,7 +66,7 @@ litExplor <- function() {
       "Data",
       shiny::fillCol(
         shiny::wellPanel(
-          DT::DTOutput('explor_table')
+          DT::DTOutput("explor_table")
         )
       )
     ))
