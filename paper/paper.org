@@ -75,29 +75,55 @@ Specific terms relevant to a topic may have been updated, made more precise, or 
 Geographic factors have a large impact on the meanings of words as well. For example, in the United Kingdom, a polytechnical institution is an outdated term that is roughly comparable to American community college. 
 FAVOR has an option to filter search results to ERIC supported geographic regions such as England or the United States.
 
+
+
 ** Results/Screenshots/Walkthrough
 
 *** Breakdown of options
 
-** Case studies
+While each database our software interfaces with provides a unique set of options to tune our searches, we have only translated a few into our product. There is a binary selection to determine if results are limited to peer reviewed works, a year range selection, and a bank of checkboxes to select which databases are searched.
 
-We demonstrate a sample workflow of our tool with two case studies. 
-An aviation topic has  possibly less relevant or extraneous terms which are identified for removal. 
-A topic of computing identity is selected to demonstrate identification of possible terms for refinement.
+** Case studies
+:TODOs:
+for all visualizations we have:
+- [ ] add screnshots of search
+- [ ] write interpretations of screenshots
+:END:
+
+We demonstrate a sample workflow of our tool with two case studies. An aviation education topic which has  possibly less relevant or extraneous terms which are identified for removal. A topic of computing identity is selected to demonstrate identification of possible terms for refinement.
 
 *** Online aviation education
 
+Our first example usecase of this package is a case study of online aviataion education. There are frequently terms in a literature review that are similar to eachother though distinct within the literature. For example, online education and virtual education are very similar, although virtual education could include techniques that simply utilize virtual environments and have no online component.
+
+Additionally, there are hierarchical search terms that could potentially be combined or decomposed for a more accurate depiction of a literature base. Distance education has been a term used by education researchers for many decades and include pre-internet based teaching methods. Today however, distance education and online education are nearly synonymous. Using the litExplor package would show that the searches "distance education", "distance education AND online education", and "online education" have very similar result counts.
+
+# TODO: insert some screenshots and walk through the interpretations 
+
 *** Computing Identity
+
+The computing identity literature base provides us a great opportunity to showcase our package. There are fewer relevant computing identity publications currently compared to other branches of STEM professional identities. There is not a single source of computing identity literature, it is spread amongst several databases. Finally computing literature will often be mentioned in the same publications as other professional STEM identities - for example computing identity is often compared to science identity.
+
+
 
 ** Discussion
 
 *** Threats To Validity
 
+Relying on paper publication counts is sensitive to the booms and busts of topic popularity.
+
+As this work is targeting education researchers, we have chosen only a handful of databases to interface with. We make use of the official APIs to comply with resource usage restrictions, but this has a dual effect of leaving this project at the mercy of many external organizations. API stability is not something that we like to assume but we have tried to outsource our database communications whenever possible to domain specific packages to help with our stability.
+
 *** Future Directions
 
-As this work is targeting education researchers, ERIC is currently the only database being utilized. We make use of the official API to comply with resource usage restrictions, but this has a dual effect of opening our tool for other APIs. Interfaces to databases are commonly provided by other databases such as ProQuest, ScienceDirect, and ...
+We have had quite a bit of fun thinking up which visualizations would be most useful for interpreting this dataset, and anticipate other methods will become clear.
+
+Currently we have no method of adjusting individual database searches within our application. Some databases provide different search options than others and currently we only support a very small subset of these options.
+
+Our application does not have a method of saving and restoring searched data or comparing across searches. Currently the workflow is single session only.
 
 ** Acknowledgements
+
 We would like to acknowledge the insight provided to this work by Dr. Eliza Gallagher and the faculty of the Clemson University Engineering and Science Education department as we have built and tuned this tool.
 
 ** References
